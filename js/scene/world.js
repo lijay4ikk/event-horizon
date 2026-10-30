@@ -10,7 +10,7 @@ export const STATION = { pos: V(7, 1.6, 36), scale: 1 };
 export const PLANETS = [
   { key: 'ocean',  type: 0, radius: 3.3, angle: deg(-22),  dist: 48, y: -0.5, tilt: .35, spin: .035, atmo: [0.30, 0.75, 1.0],
     moons: [{ r: .55, orbit: 6.2, speed: .22, phase: 1.2, incl: .25 }] },
-  { key: 'ice',    type: 1, radius: 2.6, angle: deg(-49),  dist: 51, y: 2.4,  tilt: -.2, spin: .02,  atmo: [0.70, 0.88, 1.0] },
+  { key: 'ice',    type: 1, radius: 2.6, angle: deg(-49),  dist: 51, y: 2.4,  tilt: -.2, spin: .02,  atmo: [0.40, 0.52, 0.64] },
   { key: 'desert', type: 2, radius: 3.7, angle: deg(-76),  dist: 49, y: -1.6, tilt: .45, spin: .028, atmo: [1.0, 0.62, 0.34], ring: true },
   { key: 'lava',   type: 3, radius: 2.9, angle: deg(-103), dist: 51, y: 1.0,  tilt: .1,  spin: .04,  atmo: [1.0, 0.36, 0.12] },
   { key: 'giant',  type: 4, radius: 6.4, angle: deg(-131), dist: 60, y: 3.5,  tilt: .18, spin: .004, faceLon: .7, atmo: [1.0, 0.80, 0.58],

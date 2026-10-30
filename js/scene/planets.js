@@ -93,15 +93,21 @@ void main(){
   spec = (pow(max(dot(Np, H), 0.0), 180.0) * 7.0 + pow(max(dot(N, H), 0.0), 22.0) * .35) * (1.0 - cl);
   alb = mix(water, vec3(.88, .92, .96) * (.85 + .15 * cn), cl);
 #elif TYPE == 1
-  // ледяной мир: трещины и замёрзшие облака
-  vec2 vr = voronoi(p * 5.5);
-  float crack = 1.0 - smoothstep(.0, .06, vr.y - vr.x);
-  vec2 vr2 = voronoi(p * 17.0);
-  float crack2 = 1.0 - smoothstep(.0, .04, vr2.y - vr2.x);
-  vec3 ice = mix(vec3(.62, .76, .88), vec3(.93, .97, 1.0), fbm(p * 3.0));
-  ice = mix(ice, vec3(.10, .32, .55), crack * .85 + crack2 * .35);
-  float frozen = smoothstep(.52, .7, fbm(p * 2.4 + 5.0));
-  ice = mix(ice, vec3(1.0), frozen * .75);
+  // ледяной мир: извилистые «линеи» как на Европе, хаотичные области и иней
+  vec3 iw = p + (vec3(fbm3o(p * 2.5 + 2.0), fbm3o(p * 2.5 + 8.0), fbm3o(p * 2.5 + 14.0)) - .5) * .35;
+  float n1 = abs(snoise(iw * 3.2));
+  float l1 = (1.0 - smoothstep(.02, .09, n1)) * (.55 + .45 * smoothstep(.0, .025, n1));   // двойной хребет
+  float l2 = 1.0 - smoothstep(.0, .05, abs(snoise(iw * 7.5 + 4.0)));
+  float l3 = 1.0 - smoothstep(.0, .035, abs(snoise(iw * 15.0 + 9.0)));
+  vec2 vr = voronoi(iw * 9.0);
+  float chaos = smoothstep(.6, .72, fbm(p * 2.2 + 3.0));
+  float blocks = (1.0 - smoothstep(.0, .05, vr.y - vr.x)) * chaos;
+  vec3 ice = mix(vec3(.46, .58, .70), vec3(.80, .86, .92), fbm(p * 3.0));
+  ice = mix(ice, vec3(.55, .40, .30), chaos * .45);                 // солевые примеси
+  ice = mix(ice, vec3(.42, .22, .14), l1 * .85);                     // широкие рыжие хребты
+  ice = mix(ice, vec3(.16, .30, .48), l2 * .55 + l3 * .35 + blocks * .55);
+  float frozen = smoothstep(.6, .76, fbm(p * 2.4 + 5.0));
+  ice = mix(ice, vec3(.95), frozen * .45);
   alb = ice;
   float sss = smoothstep(-.25, .1, ndl) * (1.0 - smoothstep(.1, .45, ndl));
   col += vec3(.08, .35, .75) * sss * .9;
@@ -160,17 +166,21 @@ void main(){
   alb += rimC * .18;
   spec = 0.0;
 #else
-  // вулканический мир
-  vec2 vr = voronoi(p * 4.2 + vec3(0.0, uTime * .01, 0.0));
+  // вулканический мир: рваные разломы, лавовые озёра, остывающая кора
+  vec3 lw = p + (vec3(fbm3o(p * 3.0 + 1.0), fbm3o(p * 3.0 + 5.0), fbm3o(p * 3.0 + 9.0)) - .5) * .45;
+  vec2 vr = voronoi(lw * 4.2 + vec3(0.0, uTime * .01, 0.0));
   float edge = vr.y - vr.x;
-  float crack = 1.0 - smoothstep(.0, .045, edge);
+  float wid = .02 + .05 * fbm3o(p * 6.0);                              // ширина разлома меняется
+  float crack = 1.0 - smoothstep(.0, wid, edge);
+  float fine = 1.0 - smoothstep(.0, .02, abs(snoise(lw * 12.0)));
   float crust = fbm(p * 5.0);
-  vec3 rock = mix(vec3(.035, .025, .022), vec3(.16, .11, .09), crust);
-  float lakes = smoothstep(.62, .7, fbm(p * 2.2 + 3.0));
+  vec3 rock = mix(vec3(.03, .022, .02), vec3(.17, .11, .08), crust);
+  rock = mix(rock, vec3(.32, .26, .12), smoothstep(.7, .85, fbm(p * 3.0 + 7.0)) * .5); // сера
+  float lakes = smoothstep(.64, .72, fbm(lw * 2.2 + 3.0));
   float pulse = .75 + .25 * sin(uTime * 1.3 + crust * 12.0);
-  alb = rock;
-  emis += vec3(1.0, .28, .03) * (crack * 1.5 + lakes * .9) * pulse;
-  emis += vec3(1.0, .7, .28) * pow(crack, 4.0) * 1.8 * pulse;
+  alb = rock * (1.0 - lakes);
+  emis += vec3(1.0, .28, .03) * (crack * 1.5 + lakes * 1.1 + fine * .35 * (1.0 - lakes)) * pulse;
+  emis += vec3(1.0, .72, .3) * (pow(crack, 4.0) * 1.8 + lakes * smoothstep(.75, .9, fbm3o(lw * 9.0 + uTime * .05)) * 1.2) * pulse;
   emis *= .55 + .45 * smoothstep(.4, -.3, ndl); // ночная сторона светится сильнее
   spec = pow(max(dot(N, H), 0.0), 30.0) * .15;
 #endif
