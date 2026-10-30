@@ -362,6 +362,7 @@ html.webgl .works-list { position: absolute !important; width: 1px; height: 1px;
 .term-row input:focus-visible, .term-row textarea:focus-visible { outline: none; box-shadow: none; }
 .term-row:focus-within .term-key { color: #fff; text-shadow: 0 0 10px var(--gold); }
 .term-row.invalid .term-key { color: var(--warn); }
+.hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .term-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; }
 .term-hint { margin: 0; font-size: 10px; color: rgba(255,226,180,.4); letter-spacing: .12em; text-transform: uppercase; }
 .clock-btn { display: flex; align-items: center; gap: 14px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #FFE7BF; padding: 4px 4px 4px 12px; border-radius: 40px; transition: background .3s; }
@@ -498,7 +499,8 @@ html.webgl:not(.touch) #cursor { display: block; }
   .hero-lede { font-size: 14px; }
   .term-row { grid-template-columns: 1fr; gap: 4px; }
   .term-row::after { left: 16px; top: 38px; }
-  .term-foot { flex-direction: column-reverse; align-items: stretch; }
+  .hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.term-foot { flex-direction: column-reverse; align-items: stretch; }
   .clock-btn { justify-content: space-between; }
   .ft-grid { grid-template-columns: 1fr; }
   .ft-col--end { text-align: left; justify-items: start; }

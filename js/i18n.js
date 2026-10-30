@@ -30,6 +30,7 @@ const DYN = {
   ru: {
     log: [['SYS CHECK', 'OK'], ['NAV ARRAY', 'OK'], ['GRAV LENS MODEL', 'CALIBRATED'], ['ACCRETION DISK', 'ONLINE'], ['TIME DILATION', '×61 320'], ['CREW', 'READY']],
     hyperOn: 'HYPERSPEED ENGAGED · ×5', hyperOff: 'HYPERSPEED OFF',
+    rate: 'СЛИШКОМ ЧАСТО · ПОПРОБУЙТЕ ЧЕРЕЗ МИНУТУ',
     sending: 'TRANSMITTING…', sent: 'SIGNAL RECEIVED · ОТВЕТИМ В ТЕЧЕНИЕ 24 Ч', invalid: 'ЗАПОЛНИТЕ ВСЕ ПОЛЯ', fail: 'НЕТ СВЯЗИ · НАПИШИТЕ НА ПОЧТУ',
     stay: 'S · T · A · Y', soundOn: 'SND ON', soundOff: 'SND OFF',
     labels: { core: 'ядро · реактор 4.2 ГВт', hab: 'жилой контур · 0.38 g', solar: 'панели · 42 кВт', dish: 'дальняя связь · 8.4 ГГц', dock: 'шлюз · свободен' },
@@ -38,6 +39,7 @@ const DYN = {
   en: {
     log: [['SYS CHECK', 'OK'], ['NAV ARRAY', 'OK'], ['GRAV LENS MODEL', 'CALIBRATED'], ['ACCRETION DISK', 'ONLINE'], ['TIME DILATION', '×61 320'], ['CREW', 'READY']],
     hyperOn: 'HYPERSPEED ENGAGED · ×5', hyperOff: 'HYPERSPEED OFF',
+    rate: 'TOO MANY SIGNALS · TRY AGAIN IN A MINUTE',
     sending: 'TRANSMITTING…', sent: 'SIGNAL RECEIVED · REPLY WITHIN 24 H', invalid: 'FILL IN ALL FIELDS', fail: 'NO UPLINK · PLEASE EMAIL US',
     stay: 'S · T · A · Y', soundOn: 'SND ON', soundOff: 'SND OFF',
     labels: { core: 'core · reactor 4.2 GW', hab: 'habitat ring · 0.38 g', solar: 'arrays · 42 kW', dish: 'deep-space comms · 8.4 GHz', dock: 'dock · vacant' },

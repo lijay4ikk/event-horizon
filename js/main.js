@@ -102,7 +102,10 @@ function setupForm() {
   const syncEmpty = () => rows.forEach(r => r.classList.toggle('empty', !r.querySelector('input,textarea').value));
   syncEmpty();
   let morsePlayed = 0;
+  let formStart = 0;
+  form.addEventListener('focusin', () => { formStart ||= performance.now(); });
   form.addEventListener('input', e => {
+    formStart ||= performance.now();
     syncEmpty();
     e.target.closest('.term-row')?.classList.remove('invalid');
     if (e.target.name === 'message' && /\bSTAY\b/i.test(e.target.value) && performance.now() - morsePlayed > 6000) {
@@ -129,17 +132,18 @@ function setupForm() {
     status.textContent = i18n.d.sending; status.className = '';
     fx.waveStart = performance.now() / 1000;
     audio.transmit();
-    const data = Object.fromEntries(new FormData(form));
+    const data = { ...Object.fromEntries(new FormData(form)), elapsed: Math.round(performance.now() - (formStart || performance.now())), lang: i18n.lang, page: location.href.split('#')[0] };
     const endpoint = document.querySelector('meta[name="eh-form-endpoint"]')?.content;
     try {
       if (endpoint) {
         const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) });
+        if (res.status === 429) { status.textContent = i18n.d.rate; status.className = 'err'; return; }
         if (!res.ok) throw new Error(res.status);
       } else {
         await sleep(1400); // демо-режим: эндпоинт не настроен
       }
       status.textContent = i18n.d.sent; status.className = 'ok';
-      form.reset(); syncEmpty();
+      form.reset(); syncEmpty(); formStart = 0;
     } catch (err) {
       status.textContent = i18n.d.fail; status.className = 'err';
     }

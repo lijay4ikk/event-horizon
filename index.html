@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;600&family=Unbounded:wght@300;500;700;900&display=swap">
-<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=5">
 <!-- Куда отправлять заявки (Formspree, свой API, вебхук Telegram-бота). Пусто — демо-режим. -->
-<meta name="eh-form-endpoint" content="">
+<meta name="eh-form-endpoint" content="https://event-horizon-form.kunymmenin.workers.dev">
 
 <script type="application/ld+json">
 {
@@ -298,6 +298,7 @@
             <span class="mono term-key">&gt; MESSAGE</span>
             <textarea name="message" rows="3" required maxlength="2000" data-i18n-ph="phMsg" placeholder="расскажите о проекте…"></textarea>
           </label>
+          <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
           <div class="term-foot">
             <p class="mono term-hint" id="term-hint" data-i18n="termHint">некоторые слова здесь имеют вес</p>
             <button type="submit" class="clock-btn" id="btn-send" data-magnetic aria-label="Отправить сигнал">
@@ -373,6 +374,6 @@
 
 <noscript><style>#preloader{display:none}.scene .stage{position:relative}</style></noscript>
 <!-- Собранный бандл (build.sh) — работает и при открытии файла двойным щелчком -->
-<script src="js/bundle.js?v=4" defer></script>
+<script src="js/bundle.js?v=5" defer></script>
 </body>
 </html>

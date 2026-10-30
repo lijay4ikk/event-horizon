@@ -35,15 +35,26 @@ python3 -m http.server 8765 --bind 0.0.0.0
 - `STAY` в поле сообщения: решётка мигает азбукой Морзе
 - «Вернуться на Землю ↑» перематывает весь полёт назад
 
-## Форма
+## Форма → Telegram
 
-Адрес для отправки задаётся в `index.html`:
+Заявки уходят в Telegram через Cloudflare Worker (`worker/`), адрес задан в `index.html`:
 
 ```html
-<meta name="eh-form-endpoint" content="https://formspree.io/f/XXXX">
+<meta name="eh-form-endpoint" content="https://event-horizon-form.kunymmenin.workers.dev">
 ```
 
-Форма отправляет `POST` с JSON `{name, contact, message}`. Если адрес пустой, работает демо-режим: заявка никуда не уходит, анимация отправки проигрывается.
+Worker принимает заявки только с сайта (`ALLOWED_ORIGINS` в `worker/wrangler.toml`), отсеивает ботов
+(скрытое поле-ловушка, слишком быстрое заполнение), ограничивает частоту (5 заявок в минуту с IP)
+и пересылает сообщение боту. Ключ бота и ваш ID хранятся только в секретах Cloudflare:
+
+```bash
+cd worker
+npx wrangler@4 secret put BOT_TOKEN   # ключ от @BotFather
+npx wrangler@4 secret put CHAT_ID     # ваш ID от @userinfobot
+npx wrangler@4 deploy                 # после правок worker/src/index.js
+```
+
+Если адрес пустой, форма работает в демо-режиме: заявка никуда не уходит.
 
 ## Качество и отладка
 
