@@ -337,6 +337,7 @@ uniform vec2 uLook;
 uniform float uWave;    // радиус волны (<0 — нет)
 uniform float uMorse;   // 0..1 вспышка
 uniform float uFlicker;
+uniform float uPluck;   // секунд с последнего нажатия клавиши в форме
 ${common}
 
 mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
@@ -356,6 +357,18 @@ float lattice(vec3 p, out float strand) {
   return min(min(bx, by), bz);
 }
 
+// светящиеся «книги» на полках вдоль стен коридоров
+float books(vec3 p, out float bri) {
+  const float P = 2.4;
+  float qx = mod(p.x + P * .5, P) - P * .5;
+  vec2 cell = vec2(floor(p.z / .36), floor((p.y + .6) / 1.2));
+  float h = hash12(cell + floor((p.x + P * .5) / P) * 17.0);
+  bri = step(.74, h) * (.4 + 1.6 * hash12(cell * 3.1 + 2.0));
+  vec2 lc = vec2(mod(p.z, .36) - .18, mod(p.y + .6, 1.2) - .6 - .2 + .15 * h);
+  vec3 b = vec3(abs(qx) - .01, abs(lc.x) - .1, abs(lc.y) - .2 * (.6 + .4 * h));
+  return length(max(b, 0.0)) + min(max(b.x, max(b.y, b.z)), 0.0);
+}
+
 void main() {
   vec2 uv = (vUv - .5) * vec2(uRes.x / uRes.y, 1.0);
   vec3 ro = vec3(1.2 + sin(uTime * .05) * .25, 1.2 + sin(uTime * .07) * .2 + uProg * .3, uTime * .22 + uProg * 3.0);
@@ -369,8 +382,9 @@ void main() {
   vec3 hot = vec3(1.0, .88, .66);
   for (int i = 0; i < 90; i++) {
     vec3 p = ro + rd * t;
-    float st;
+    float st, bri;
     float d = lattice(p, st);
+    float db = books(p, bri);
     float fog = exp(-t * .1);
     float w = 1.0;
     float wv = 0.0;
@@ -382,8 +396,13 @@ void main() {
     float flick = .85 + .15 * sin(p.y * 3.0 + uTime * 2.0 + p.x);
     float cellV = .35 + 1.1 * hash13(floor((p + 1.2) / 2.4));
     vec3 beamC = mix(hot, vec3(.75, .92, 1.0), min(wv * 1.5, 1.0));
-    glow += (beamC * .00038 / (.00025 + d * d) * w * cellV + amber * .00007 / (.00003 + st * st) * flick * (.6 + .8 * cellV) * (1.0 + wv * 6.0)) * fog * .02;
-    t += max(min(d, st) * .75, .035);
+    // щипок струн: при наборе текста по нитям бежит световая волна
+    float pl = uPluck < 3.0 ? exp(-uPluck * 1.6) * (.5 + .5 * sin(p.y * 7.0 - uPluck * 28.0 + p.z * 2.0)) : 0.0;
+    float bookFl = .8 + .2 * sin(uTime * (1.0 + bri) + p.z * 3.0);
+    glow += (beamC * .00038 / (.00025 + d * d) * w * cellV
+           + amber * .00007 / (.00003 + st * st) * flick * (.6 + .8 * cellV) * (1.0 + wv * 6.0 + pl * 5.0)
+           + vec3(1.0, .5, .16) * bri * bookFl * .00004 / (.00002 + db * db)) * fog * .02;
+    t += max(min(min(d, st), db + .01) * .75, .035);
     if (t > 46.0) break;
   }
   vec3 col = glow * (1.0 + uMorse * 3.5) * uFlicker;

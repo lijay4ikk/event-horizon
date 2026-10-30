@@ -7,6 +7,7 @@ import { Planets } from './scene/planets.js';
 import { TitleParticles } from './scene/title.js';
 import { Gallery } from './scene/gallery.js';
 import { Belt } from './scene/belt.js';
+import { Motes } from './scene/motes.js';
 import { sampleCamera, PLANETS, PLANET_T, smooth, win } from './scene/world.js';
 import { AudioEngine } from './audio.js';
 import { I18n } from './i18n.js';
@@ -115,7 +116,7 @@ function setupSoundButton() {
 }
 
 // ═══════════════ форма-терминал ═══════════════
-const fx = { waveStart: -1, morse: 0, morseTarget: 0, handAngle: 0 };
+const fx = { waveStart: -1, morse: 0, morseTarget: 0, handAngle: 0, pluck: -99 };
 function setupForm() {
   const form = $('#terminal');
   const rows = $$('.term-row');
@@ -131,6 +132,7 @@ function setupForm() {
   form.addEventListener('focusin', () => { formStart ||= performance.now(); });
   form.addEventListener('input', e => {
     formStart ||= performance.now();
+    if (e.target.name !== 'website') { fx.pluck = performance.now() / 1000; audio.pluck(); }
     syncEmpty();
     e.target.closest('.term-row')?.classList.remove('invalid');
     if (e.target.name === 'message' && /\bSTAY\b/i.test(e.target.value) && performance.now() - morsePlayed > 6000) {
@@ -282,6 +284,8 @@ async function boot() {
   world.add(planets.group);
   const belt = new Belt(tier.rocks, tier.dust);
   world.add(belt.group);
+  const motes = new Motes(tierName === 'low' ? 220 : 420);
+  world.add(motes.points);
   pre.set(.34);
   await nextFrame();
 
@@ -498,6 +502,7 @@ async function boot() {
     { el: $('.worm-hud'), w: [3.0, 3.06, 3.5, 3.57] },
     { el: $('#works .scene-head'), w: [3.98, 4.05, 4.2, 4.28] },
     { el: $('.drag-hint'), w: [4.08, 4.14, 4.55, 4.62] },
+    { el: $('.earth-clock'), w: [4.06, 4.14, 4.97, 5.02] },
     { el: $('.contact-wrap'), w: [5.0, 5.14, 9, 10] },
     ...theses.map((el, i) => ({ el, w: [1.12 + i * .205, 1.15 + i * .205, 1.28 + i * .205, 1.31 + i * .205], panel: true })),
     ...services.map((el, i) => ({ el, w: [PLANET_T[i] - .04, PLANET_T[i] - .012, PLANET_T[i] + .125, PLANET_T[i] + .15], panel: true })),
@@ -632,8 +637,23 @@ async function boot() {
   let lastHud = 0, lastScene = -1;
   const pad = (n, l = 2) => String(Math.floor(n)).padStart(l, '0');
   const footer = $('.footer');
+  // часы «на Земле прошло»: замедление времени у горизонта
+  const earthEl = $('#earth-time');
+  let earthShown = '';
+  function earthTime(T) {
+    if (T >= 4.95) return '∞';
+    const years = Math.pow(10, (T - 4.08) * 4.6) * .35;  // от месяцев до тысячелетий
+    const ru = i18n.lang === 'ru';
+    const pl = (n, a, b, c) => { const m = n % 100, k = n % 10; return m > 10 && m < 20 ? c : k > 1 && k < 5 ? b : k === 1 ? a : c; };
+    if (years < 1) { const d = Math.max(1, Math.round(years * 365)); return ru ? `${d} ${pl(d, 'день', 'дня', 'дней')}` : `${d} day${d > 1 ? 's' : ''}`; }
+    const y = Math.floor(years), d = Math.floor((years - y) * 365);
+    const ys = y.toLocaleString(ru ? 'ru-RU' : 'en-US');
+    if (y >= 100) return ru ? `${ys} ${pl(y, 'год', 'года', 'лет')}` : `${ys} years`;
+    return ru ? `${ys} ${pl(y, 'год', 'года', 'лет')} ${d} ${pl(d, 'день', 'дня', 'дней')}` : `${ys} yr ${d} d`;
+  }
   function updateHud(st) {
     const T = S.T;
+    if (T > 4.0 && T < 5.05) { const v = earthTime(S.camT); if (v !== earthShown) { earthShown = v; earthEl.textContent = v; } }
     html.classList.toggle('at-footer', footer.getBoundingClientRect().top < innerHeight - 30);
     const p = clamp(T / 5.85, 0, 1);
     tm.fill.style.transform = `scaleY(${p.toFixed(4)})`;
@@ -886,13 +906,15 @@ async function boot() {
     te.uWave.value = wt >= 0 && wt < 4 ? wt * 12 : -1;
     fx.morse += (fx.morseTarget - fx.morse) * Math.min(1, dt * 40);
     te.uMorse.value = fx.morse;
+    te.uPluck.value = performance.now() / 1000 - fx.pluck;
     te.uFlicker.value = .96 + .04 * Math.sin(S.time * 23) * Math.sin(S.time * 7);
     cosmos.syncCamera(camera);
     cosmos.render(st);
 
     // сцена
     pipe.beginScene();
-    if (station.group.visible || planets.group.visible || belt.group.visible) pipe.renderScene(world, camera);
+    motes.update(S.sim, camera, reduced ? 0 : st.tess, innerHeight * pipe.q.dpr * .02);
+    if (station.group.visible || planets.group.visible || belt.group.visible || motes.points.visible) pipe.renderScene(world, camera);
 
     // частицы заголовка
     const holeP = project(new THREE.Vector3(0, 0, 0));

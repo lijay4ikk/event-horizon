@@ -247,6 +247,24 @@ export class AudioEngine {
     b.connect(bg); bg.connect(this.bus); bg.connect(this.verbIn); b.start(t + .55); b.stop(t + 3.1);
   }
 
+  // нота-«щипок» струны тессеракта (пентатоника в тональности фона)
+  pluck() {
+    if (!this.ready || !this.on) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    if (t - (this.lastPluck || 0) < .055) return;
+    this.lastPluck = t;
+    const scale = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81];
+    const n = scale[(this.pluckI = ((this.pluckI || 0) + 1 + (Math.random() * 3 | 0)) % scale.length)];
+    const f = 440 * Math.pow(2, (n - 69) / 12);
+    const g = ctx.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + 1.6);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(4000, t); lp.frequency.exponentialRampToValueAtTime(700, t + 1.2);
+    [[1, 'triangle', 1], [2, 'sine', .35], [3.01, 'sine', .12]].forEach(([m, type, v]) => {
+      const o = ctx.createOscillator(); o.type = type; o.frequency.value = f * m;
+      const og = ctx.createGain(); og.gain.value = v; o.connect(og); og.connect(lp); o.start(t); o.stop(t + 1.7);
+    });
+    lp.connect(g); g.connect(this.ui); g.connect(this.verbIn);
+  }
+
   transmit() {
     if (!this.ready || !this.on) return;
     const ctx = this.ctx, t = ctx.currentTime;

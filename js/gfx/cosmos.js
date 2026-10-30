@@ -26,7 +26,7 @@ export class Cosmos {
     }, true);
     this.tess = mk(S.tesseractFrag, {
       uRes: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 }, uMix: { value: 0 }, uProg: { value: 0 },
-      uLook: { value: new THREE.Vector2() }, uWave: { value: -1 }, uMorse: { value: 0 }, uFlicker: { value: 1 }, uPix: { value: .001 },
+      uLook: { value: new THREE.Vector2() }, uWave: { value: -1 }, uMorse: { value: 0 }, uFlicker: { value: 1 }, uPix: { value: .001 }, uPluck: { value: 99 },
     }, true);
   }
 
