@@ -24,6 +24,7 @@ const EN = {
   phName: 'what should we call you', phContact: 'email or @telegram', phMsg: 'tell us about the project…',
   termHint: 'some words carry weight here', send: 'send signal',
   earth: 'Return to Earth', rights: 'Every world built from scratch.', discuss: 'Discuss a project',
+  privacy: 'This site counts anonymous statistics: country, device, path through the scenes. IP addresses and cookies are not stored.',
 };
 
 const DYN = {
@@ -35,6 +36,7 @@ const DYN = {
     stay: 'S · T · A · Y', soundOn: 'SND ON', soundOff: 'SND OFF',
     labels: { core: 'ядро · реактор 4.2 ГВт', hab: 'жилой контур · 0.38 g', solar: 'панели · 42 кВт', dish: 'дальняя связь · 8.4 ГГц', dock: 'шлюз · свободен' },
     planetHint: 'клик — облёт',
+    trackOff: 'отключить', trackOn: 'включить', trackDisabled: 'Для этого браузера статистика отключена.',
   },
   en: {
     log: [['SYS CHECK', 'OK'], ['NAV ARRAY', 'OK'], ['GRAV LENS MODEL', 'CALIBRATED'], ['ACCRETION DISK', 'ONLINE'], ['TIME DILATION', '×61 320'], ['CREW', 'READY']],
@@ -44,6 +46,7 @@ const DYN = {
     stay: 'S · T · A · Y', soundOn: 'SND ON', soundOff: 'SND OFF',
     labels: { core: 'core · reactor 4.2 GW', hab: 'habitat ring · 0.38 g', solar: 'arrays · 42 kW', dish: 'deep-space comms · 8.4 GHz', dock: 'dock · vacant' },
     planetHint: 'click to orbit',
+    trackOff: 'opt out', trackOn: 'opt in', trackDisabled: 'Statistics are off for this browser.',
   },
 };
 

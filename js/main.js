@@ -12,6 +12,7 @@ import { I18n } from './i18n.js';
 import { Cursor, scramble, resetScrambleCache, toast, konami } from './ui.js';
 import { WORKS, PLANET_INFO } from './content.js';
 import { makeArt } from './artgen.js';
+import { createAnalytics, setTrackingEnabled, trackingEnabled } from './analytics.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -24,6 +25,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const i18n = new I18n();
 const audio = new AudioEngine();
+const stats = createAnalytics({ site_lang: i18n.lang, webgl: html.classList.contains('webgl') ? 1 : 0 });
+i18n.onChange(l => { stats.set('site_lang', l); stats.event('lang', l); });
+setupPrivacy();
 
 // ═══════════════ общий DOM (работает и без WebGL) ═══════════════
 buildWorksList();
@@ -61,6 +65,26 @@ function buildWorksList() {
   });
 }
 
+// уведомление о статистике в футере с кнопкой «отключить»
+function setupPrivacy() {
+  const btn = $('#btn-track');
+  if (!btn) return;
+  const sync = () => {
+    const on = trackingEnabled();
+    btn.textContent = on ? i18n.d.trackOff : i18n.d.trackOn;
+    btn.setAttribute('aria-pressed', String(!on));
+    $('#track-state').textContent = on ? '' : i18n.d.trackDisabled;
+  };
+  btn.addEventListener('click', () => {
+    const on = !trackingEnabled();
+    setTrackingEnabled(on);
+    if (!on) stats.stop();
+    sync();
+  });
+  i18n.onChange(sync);
+  sync();
+}
+
 function buildClockTicks() {
   const g = $('.cb-ticks');
   let s = '';
@@ -84,7 +108,7 @@ function setupSoundButton() {
     b.setAttribute('aria-pressed', String(audio.on));
     b.querySelector('.sound-txt').textContent = audio.on ? i18n.d.soundOn : i18n.d.soundOff;
   };
-  b.addEventListener('click', () => { audio.setOn(!audio.on); sync(); audio.click(); });
+  b.addEventListener('click', () => { audio.setOn(!audio.on); sync(); audio.click(); stats.event('sound', audio.on ? 'on' : 'off'); });
   i18n.onChange(sync);
   audio.onSync = sync;
 }
@@ -143,6 +167,7 @@ function setupForm() {
         await sleep(1400); // демо-режим: эндпоинт не настроен
       }
       status.textContent = i18n.d.sent; status.className = 'ok';
+      stats.event('form');
       form.reset(); syncEmpty(); formStart = 0;
     } catch (err) {
       status.textContent = i18n.d.fail; status.className = 'err';
@@ -152,6 +177,7 @@ function setupForm() {
 
 const MORSE = { S: '...', T: '-', A: '.-', Y: '-.--' };
 async function playMorse(word) {
+  stats.event('stay');
   const out = $('#morse');
   out.textContent = '';
   const u = 150;
@@ -174,6 +200,7 @@ async function playMorse(word) {
 let lenis = null;
 let modalOpen = false;
 function openWork(i, fromImg) {
+  stats.event('work', WORKS[i].en.t);
   const w = WORKS[i], t = w[i18n.lang];
   const m = $('#modal'), img = $('#md-img');
   img.src = makeArt(w.art, w.pal, i + 1, 1600, 1000);
@@ -218,6 +245,7 @@ async function boot() {
   const pipe = new Pipeline(canvas);
   const renderer = pipe.renderer;
   const tierName = detectTier(renderer);
+  stats.set('tier', tierName);
   const TIERS = {
     high:   { dpr: Math.min(devicePixelRatio, 2),    bg: .72, steps: 220, samples: 4, particles: 14000 },
     medium: { dpr: Math.min(devicePixelRatio, 1.5),  bg: .56, steps: 150, samples: 2, particles: 9000 },
@@ -382,6 +410,7 @@ async function boot() {
     [...panel.children].forEach((c, k) => { c.classList.add('stagger'); c.style.transitionDelay = `${.15 + k * .06}s`; });
   }
   function openPlanet(i) {
+    stats.event('planet', PLANET_INFO[i].id);
     if (focus.target && focus.idx === i) return;
     focus.idx = i; focus.target = 1; focus.ang = 0;
     fillPlanet(i);
@@ -404,6 +433,7 @@ async function boot() {
 
   // ── гиперскорость / перемотка ───────────────────────────
   konami(() => {
+    stats.event('konami');
     S.hyper = !S.hyper;
     html.classList.toggle('hyper', S.hyper);
     lenis.options.wheelMultiplier = S.hyper ? 3 : .9;
@@ -416,6 +446,7 @@ async function boot() {
     S.rewinding = true; html.classList.add('rewinding');
     closePlanet(); closeWork();
     audio.rewind(dur);
+    stats.event('rewind');
     lenis.scrollTo(0, {
       duration: dur, lock: true, force: true,
       easing: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
@@ -581,6 +612,7 @@ async function boot() {
       mmBtns.forEach((b, i) => { b.classList.toggle('active', i === sc); b.classList.toggle('passed', i < sc); });
       navLinks.forEach(a => a.classList.toggle('active', +a.dataset.goto === sc || (sc === 3 && +a.dataset.goto === 2)));
       tm.tag.textContent = SCN[sc];
+      stats.scene(sc);
       if (!reduced) scramble(tm.tag, 600);
     }
     if (S.time - lastHud < .1) return;
@@ -661,6 +693,7 @@ async function boot() {
     S.launchAt = performance.now() / 1000;
     S.launchTime = S.time;
     if (withSound) { audio.setOn(true); audio.boom(); audio.onSync?.(); }
+    stats.launch(withSound);
     if (window.DeviceOrientationEvent) {
       const req = DeviceOrientationEvent.requestPermission;
       if (typeof req === 'function') req().then(s => s === 'granted' && addEventListener('deviceorientation', onOrient)).catch(() => {});

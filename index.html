@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;600&family=Unbounded:wght@300;500;700;900&display=swap">
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 <!-- Куда отправлять заявки (Formspree, свой API, вебхук Telegram-бота). Пусто — демо-режим. -->
 <meta name="eh-form-endpoint" content="https://event-horizon-form.kunymmenin.workers.dev">
 
@@ -337,6 +337,7 @@
     <div class="ft-col ft-col--end">
       <button class="btn-earth" id="btn-earth" data-magnetic><span data-i18n="earth">Вернуться на Землю</span> <i>↑</i></button>
       <p class="mono ft-dim">© 2026 EVENT HORIZON. <span data-i18n="rights">Все миры созданы с нуля.</span></p>
+      <p class="ft-privacy"><span data-i18n="privacy">Сайт считает обезличенную статистику: страна, устройство, путь по сценам. IP-адреса и cookies не сохраняются.</span> <span id="track-state"></span> <button type="button" class="ft-link mono" id="btn-track">отключить</button></p>
     </div>
   </div>
 </footer>
@@ -374,6 +375,6 @@
 
 <noscript><style>#preloader{display:none}.scene .stage{position:relative}</style></noscript>
 <!-- Собранный бандл (build.sh) — работает и при открытии файла двойным щелчком -->
-<script src="js/bundle.js?v=5" defer></script>
+<script src="js/bundle.js?v=6" defer></script>
 </body>
 </html>

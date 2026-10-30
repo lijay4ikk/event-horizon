@@ -5,15 +5,34 @@ workers_dev = true
 preview_urls = false
 
 [vars]
-# Сайты, с которых разрешено отправлять форму (через запятую)
+# Сайты, с которых принимаются заявки и статистика (через запятую)
 ALLOWED_ORIGINS = "https://lijay4ikk.github.io,http://127.0.0.1:8765,http://localhost:8765"
+SITE_URL = "https://lijay4ikk.github.io/event-horizon/"
+TZ_OFFSET_HOURS = "3"   # дни и часы в сводках — по Москве
 
-# Не больше 5 заявок в минуту с одного IP
+# Сводка в Telegram каждый день в 09:00 МСК (06:00 UTC)
+[triggers]
+crons = ["0 6 * * *"]
+
+# База статистики
+[[d1_databases]]
+binding = "DB"
+database_name = "eh-analytics"
+database_id = "6c7d7609-1bd8-44af-89b1-31761506b465"
+
+# Форма: не больше 5 заявок в минуту с одного IP
 [[ratelimits]]
 name = "LIMITER"
 namespace_id = "1001"
 simple = { limit = 5, period = 60 }
 
-# Секреты задаются командами (в код не попадают):
-#   npx wrangler@4 secret put BOT_TOKEN
-#   npx wrangler@4 secret put CHAT_ID
+# Статистика: не больше 60 сигналов в минуту с одного IP
+[[ratelimits]]
+name = "TRACK_LIMITER"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
+
+# Секреты (в код не попадают), задаются: npx wrangler@4 secret put <ИМЯ>
+#   BOT_TOKEN  — ключ бота от @BotFather
+#   CHAT_ID    — ваш Telegram ID
+#   ADMIN_KEY  — служебный ключ (хэширование, вебхук бота, ручной запуск сводки)

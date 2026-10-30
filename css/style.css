@@ -381,6 +381,10 @@ html.webgl .works-list { position: absolute !important; width: 1px; height: 1px;
 .ft-col p { margin: 0 0 6px; font-size: 12px; }
 .ft-k { color: var(--gold); letter-spacing: .2em; font-size: 10px !important; }
 .ft-dim { color: var(--ash); }
+.ft-privacy { margin: 4px 0 0 !important; max-width: 46ch; font: 400 11.5px/1.5 var(--f-body) !important; color: var(--ash); text-align: right; }
+.ft-link { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ice); border-bottom: 1px solid rgba(159,216,255,.4); padding: 2px 0; margin-left: 4px; }
+.ft-link:hover { color: #fff; border-color: #fff; }
+@media (max-width: 768px) { .ft-privacy { text-align: left; } }
 .ft-social { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 .ft-social a { position: relative; font-size: 14px; padding: 3px 0; }
 .ft-col--end { text-align: right; display: grid; justify-items: end; gap: 16px; }
