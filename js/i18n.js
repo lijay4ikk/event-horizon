@@ -38,7 +38,7 @@ const DYN = {
     stay: 'S · T · A · Y', soundOn: 'SND ON', soundOff: 'SND OFF',
     labels: { core: 'ядро · реактор 4.2 ГВт', hab: 'жилой контур · 0.38 g', solar: 'панели · 42 кВт', dish: 'дальняя связь · 8.4 ГГц', dock: 'шлюз · свободен' },
     planetHint: 'клик — облёт',
-    bhName: 'EH-1 · 4,3 млн масс Солнца', bhHint: 'нажмите — гравитационная волна', gwTouch: 'КОСНИТЕСЬ ЧЁРНОЙ ДЫРЫ',
+    bhName: 'EH-1 · 4,3 млн масс Солнца', bhHint: 'нажмите — гравитационная волна', gwTouch: 'КОСНИТЕСЬ ЧЁРНОЙ ДЫРЫ', orbitHint: 'ТЯНИТЕ МЫШЬЮ — ОБЛЕТИТЕ ДЫРУ',
     trackOff: 'отключить', trackOn: 'включить', trackDisabled: 'Для этого браузера статистика отключена.',
   },
   en: {
@@ -49,7 +49,7 @@ const DYN = {
     stay: 'S · T · A · Y', soundOn: 'SND ON', soundOff: 'SND OFF',
     labels: { core: 'core · reactor 4.2 GW', hab: 'habitat ring · 0.38 g', solar: 'arrays · 42 kW', dish: 'deep-space comms · 8.4 GHz', dock: 'dock · vacant' },
     planetHint: 'click to orbit',
-    bhName: 'EH-1 · 4.3 million solar masses', bhHint: 'click — gravitational wave', gwTouch: 'TOUCH THE BLACK HOLE',
+    bhName: 'EH-1 · 4.3 million solar masses', bhHint: 'click — gravitational wave', gwTouch: 'TOUCH THE BLACK HOLE', orbitHint: 'DRAG TO ORBIT THE HOLE',
     trackOff: 'opt out', trackOn: 'opt in', trackDisabled: 'Statistics are off for this browser.',
   },
 };

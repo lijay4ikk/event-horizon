@@ -88,6 +88,21 @@ function setupPrivacy() {
   sync();
 }
 
+// финальная подпись по ширине футера
+function fitMark() {
+  const m = $('.ft-mark');
+  if (!m) return;
+  m.style.fontSize = '100px';
+  const spans = [...m.querySelectorAll('span')];
+  const rs = spans.map(s => s.getBoundingClientRect());
+  const w = innerWidth > 768 ? rs[rs.length - 1].right - rs[0].left : Math.max(...rs.map(r => r.width));
+  const avail = m.clientWidth;
+  if (w > 0 && avail > 0) m.style.fontSize = `${Math.min(260, 100 * avail / w * .985).toFixed(1)}px`;
+}
+document.fonts?.ready.then(fitMark);
+addEventListener('resize', fitMark);
+fitMark();
+
 function buildClockTicks() {
   const g = $('.cb-ticks');
   let s = '';
@@ -372,6 +387,7 @@ async function boot() {
     const c = bhScreen();
     gw.t0 = S.time; gw.x = c.x / innerWidth; gw.y = 1 - c.y / innerHeight; gw.used = true;
     audio.gwave(); stats.event('gwave');
+    if (!touch && !orbit.hinted) { orbit.hinted = true; setTimeout(() => S.T < .06 && toast(i18n.d.orbitHint, 3800), 2600); }
   }
   // гравитационный курсор на первом экране: мышь (или палец) — маленькая масса
   const lens = { x: .5, y: .5, s: 0, touchOn: false, tx: 0, ty: 0 };
@@ -381,6 +397,25 @@ async function boot() {
     addEventListener('touchmove', tp, { passive: true });
     addEventListener('touchend', () => { lens.touchOn = false; }, { passive: true });
   }
+  // облёт чёрной дыры перетаскиванием на первом экране (мышь)
+  const orbit = { yaw: 0, pitch: 0, ty: 0, tp: 0, drag: false, lx: 0, ly: 0, moved: 0, hinted: false };
+  addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !S.introDone || S.T > .06 || modalOpen) return;
+    if (e.target.closest('a, button, input, textarea, .nav, .minimap, form, .sheet, #modal')) return;
+    orbit.drag = true; orbit.lx = e.clientX; orbit.ly = e.clientY; orbit.moved = 0;
+  });
+  addEventListener('pointermove', e => {
+    if (!orbit.drag) return;
+    const dx = e.clientX - orbit.lx, dy = e.clientY - orbit.ly;
+    orbit.lx = e.clientX; orbit.ly = e.clientY; orbit.moved += Math.abs(dx) + Math.abs(dy);
+    orbit.ty -= dx * .006;
+    orbit.tp = clamp(orbit.tp + dy * .005, -.75, 1.25);
+    html.classList.toggle('orbiting', orbit.moved > 8);
+  }, { passive: true });
+  addEventListener('pointerup', () => {
+    if (orbit.drag && orbit.moved > 8) stats.event('orbit');
+    orbit.drag = false; html.classList.remove('orbiting');
+  });
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2(-9, -9);
   let hovered = { kind: null, key: null };
@@ -648,6 +683,7 @@ async function boot() {
   let lastHud = 0, lastScene = -1;
   const pad = (n, l = 2) => String(Math.floor(n)).padStart(l, '0');
   const footer = $('.footer');
+  const ftMark = $('.ft-mark');
   // часы «на Земле прошло»: замедление времени у горизонта
   const earthEl = $('#earth-time');
   let earthShown = '';
@@ -665,7 +701,10 @@ async function boot() {
   function updateHud(st) {
     const T = S.T;
     if (T > 4.0 && T < 5.05) { const v = earthTime(S.camT); if (v !== earthShown) { earthShown = v; earthEl.textContent = v; } }
-    html.classList.toggle('at-footer', footer.getBoundingClientRect().top < innerHeight - 30);
+    const fr = footer.getBoundingClientRect();
+    html.classList.toggle('at-footer', fr.top < innerHeight - 30);
+    const ftp = clamp((innerHeight - fr.top) / fr.height, 0, 1);
+    if (Math.abs(ftp - (S.ftp ?? -1)) > .004) { S.ftp = ftp; ftMark.style.setProperty('--ft', smooth(.55, 1, ftp).toFixed(3)); }
     const p = clamp(T / 5.85, 0, 1);
     tm.fill.style.transform = `scaleY(${p.toFixed(4)})`;
     tm.ship.style.top = `${(p * 100).toFixed(2)}%`;
@@ -829,6 +868,20 @@ async function boot() {
     // камера по траектории
     const ct = S.camT + introOffset;
     sampleCamera(ct, cam);
+    // облёт: вращаем камеру и цель вокруг ЧД; при скролле плавно возвращаемся
+    if (S.T > .2 && !orbit.drag) { orbit.ty = 0; orbit.tp = 0; }
+    orbit.yaw += (orbit.ty - orbit.yaw) * Math.min(1, dt * 4);
+    orbit.pitch += (orbit.tp - orbit.pitch) * Math.min(1, dt * 4);
+    const ow = 1 - smooth(.02, .16, S.camT);
+    if (ow > 0 && (Math.abs(orbit.yaw) > 1e-4 || Math.abs(orbit.pitch) > 1e-4)) {
+      const yaw = orbit.yaw * ow, pitch = orbit.pitch * ow;
+      const rotP = v => {
+        const r = Math.hypot(v.x, v.z), el = Math.atan2(v.y, r);
+        const el2 = clamp(el + pitch, -1.35, 1.45), az = Math.atan2(v.x, v.z) + yaw, len = v.length();
+        return v.set(Math.sin(az) * Math.cos(el2) * len, Math.sin(el2) * len, Math.cos(az) * Math.cos(el2) * len);
+      };
+      rotP(cam.pos); cam.tgt.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    }
     // фокус на планете
     focus.mix += (focus.target - focus.mix) * Math.min(1, dt * 2.0);
     if (focus.idx >= 0) {
