@@ -548,7 +548,7 @@ async function boot() {
     { el: $('.worm-hud'), w: [3.0, 3.06, 3.5, 3.57] },
     { el: $('#works .scene-head'), w: [3.98, 4.05, 4.2, 4.28] },
     { el: $('.drag-hint'), w: [4.08, 4.14, 4.55, 4.62] },
-    { el: $('.earth-clock'), w: [4.06, 4.14, 4.97, 5.02] },
+    { el: $('.earth-clock'), w: [4.17, 4.25, 4.97, 5.02] },
     { el: $('.contact-wrap'), w: [5.0, 5.14, 9, 10] },
     ...theses.map((el, i) => ({ el, w: [1.12 + i * .205, 1.15 + i * .205, 1.28 + i * .205, 1.31 + i * .205], panel: true })),
     ...services.map((el, i) => ({ el, w: [PLANET_T[i] - .04, PLANET_T[i] - .012, PLANET_T[i] + .125, PLANET_T[i] + .15], panel: true })),
