@@ -526,6 +526,7 @@ uniform float uScan;
 uniform vec4 uRipple;   // xy центр (uv), z возраст (с), w сила
 uniform float uAspect;
 uniform vec4 uLens;     // xy центр (uv), z радиус Эйнштейна (доля высоты), w сила
+uniform float uZoom;    // радиальное размытие скорости при падении
 
 vec3 aces(vec3 x) {
   const float a = 2.51, b = .03, c = 2.43, d = .59, e = .14;
@@ -574,6 +575,15 @@ void main() {
   bl.g = texture2D(tBloom, uv).g;
   bl.b = texture2D(tBloom, uv - off * 1.5).b;
   col += bl * uBloom;
+  if (uZoom > .001) {
+    vec3 acc = col;
+    float j = h12(vUv * uRes + fract(uTime * 7.0) * 61.0);
+    for (int i = 1; i < 9; i++) {
+      vec2 u2 = .5 + (uv - .5) * (1.0 - uZoom * .016 * (float(i) - j));
+      acc += texture2D(tScene, u2).rgb + texture2D(tBloom, u2).rgb * uBloom;
+    }
+    col = acc / 9.0;
+  }
   vec3 fl = texture2D(tFlare, uv).rgb;
   col += fl * vec3(.55, .78, 1.0) * uFlare;
   col *= 1.0 - lensShadow;

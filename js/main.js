@@ -1023,6 +1023,7 @@ async function boot() {
     F.uFlash.value = reduced ? 0 : Math.max(exitFlash * .9, tessFlash * .75);
     F.uFlashColor.value.setRGB(...(tessFlash > exitFlash ? [1, .72, .38] : [.88, .94, 1]));
     F.uFade.value = 0;
+    F.uZoom.value = reduced ? 0 : win(S.camT, 4.8, 4.94, 4.99, 5.03) * (S.hyper ? 1.4 : 1);
     pipe.post(S.time);
 
     // галерея

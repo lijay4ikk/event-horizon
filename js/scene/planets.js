@@ -66,18 +66,32 @@ void main(){
   float spec = 0.0;
 
 #if TYPE == 0
-  // водный мир: гигантские волны
-  float sw = sin(dot(p, normalize(vec3(.25, 1.0, .15))) * 70.0 + fbm3o(p * 3.0) * 9.0 - uTime * 1.3);
-  float crest = pow(.5 + .5 * sw, 14.0);
-  float swell = fbm3o(p * 7.0 + vec3(uTime * .02, 0, 0));
-  vec3 deep = vec3(.004, .035, .07), shallow = vec3(.01, .16, .24);
-  vec3 water = mix(deep, shallow, smoothstep(.3, .8, swell));
-  water += vec3(.55, .7, .75) * crest * (.25 + .5 * swell);
-  vec3 Np = normalize(N + (vec3(snoise(p * 26.0 + uTime * .3), snoise(p * 26.0 + 9.0), snoise(p * 26.0 + 17.0 - uTime * .3)) * .14 + vec3(0.0, crest * .3, 0.0)));
-  spec = pow(max(dot(Np, H), 0.0), 140.0) * 6.0 + pow(max(dot(N, H), 0.0), 18.0) * .25;
-  float cl = smoothstep(.56, .82, fbm(p * 3.2 + vec3(uTime * .012, 0.0, uTime * .006)));
-  alb = mix(water, vec3(.85, .9, .95), cl * .85);
-  spec *= (1.0 - cl);
+  // водный мир: глубокий океан, отмели, циклоны с «глазом», тени облаков и блик солнца
+  vec3 wq = p + (vec3(fbm3o(p * 2.0 + 1.0), fbm3o(p * 2.0 + 7.0), fbm3o(p * 2.0 + 13.0)) - .5) * .5;
+  float depth = fbm(wq * 3.2);
+  vec3 water = mix(vec3(.003, .026, .07), vec3(.012, .12, .23), smoothstep(.35, .66, depth));
+  water = mix(water, vec3(.04, .36, .42), smoothstep(.72, .88, depth) * .65);
+  // редкие гигантские волны
+  float sw = sin(dot(wq, normalize(vec3(.25, 1.0, .15))) * 46.0 + fbm3o(p * 3.0) * 8.0 - uTime * 1.1);
+  float crest = pow(.5 + .5 * sw, 22.0) * smoothstep(.5, .78, fbm3o(p * 5.0 + 3.0));
+  water += vec3(.5, .66, .72) * crest * .4;
+  // облака закручены вокруг двух циклонов
+  vec3 sp = p;
+  vec3 c1 = normalize(vec3(.62, .32, .72)), c2 = normalize(vec3(-.55, -.42, .72));
+  float r1 = length(sp - c1), r2 = length(sp - c2);
+  float a1 = 7.0 * exp(-r1 * 5.0) + uTime * .05, a2 = -6.0 * exp(-r2 * 6.0) - uTime * .04;
+  sp = sp * cos(a1) + cross(c1, sp) * sin(a1) + c1 * dot(c1, sp) * (1.0 - cos(a1));
+  sp = sp * cos(a2) + cross(c2, sp) * sin(a2) + c2 * dot(c2, sp) * (1.0 - cos(a2));
+  vec3 drift = vec3(uTime * .01, 0.0, uTime * .005);
+  float streak = fbm3o(vec3(sp.x * 2.0, sp.y * 9.0, sp.z * 2.0) + drift);
+  float cn = fbm(sp * 3.4 + drift) * .7 + streak * .3;
+  float eye = smoothstep(.03, .07, r1) * smoothstep(.025, .06, r2);
+  float cl = smoothstep(.5, .74, cn) * eye;
+  float shadow = smoothstep(.5, .74, fbm(sp * 3.4 + drift + L * .03) * .7 + streak * .3);
+  water *= 1.0 - shadow * .55;
+  vec3 Np = normalize(N + vec3(snoise(p * 30.0 + uTime * .25), snoise(p * 30.0 + 9.0), snoise(p * 30.0 + 17.0 - uTime * .25)) * .1);
+  spec = (pow(max(dot(Np, H), 0.0), 180.0) * 7.0 + pow(max(dot(N, H), 0.0), 22.0) * .35) * (1.0 - cl);
+  alb = mix(water, vec3(.88, .92, .96) * (.85 + .15 * cn), cl);
 #elif TYPE == 1
   // ледяной мир: трещины и замёрзшие облака
   vec2 vr = voronoi(p * 5.5);
