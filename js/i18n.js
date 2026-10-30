@@ -24,6 +24,7 @@ const EN = {
   contactEyebrow: 'tesseract · the fifth dimension', contactTitle: 'Get in touch',
   phName: 'what should we call you', phContact: 'email or @telegram', phMsg: 'tell us about the project…',
   termHint: 'some words carry weight here', send: 'send signal',
+  bhHintShort: 'click the horizon',
   earth: 'Return to Earth', rights: 'Every world built from scratch.', discuss: 'Discuss a project',
   privacy: 'This site counts anonymous statistics: country, device, path through the scenes. IP addresses and cookies are not stored.',
 };

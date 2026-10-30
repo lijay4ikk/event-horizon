@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;600&family=Unbounded:wght@300;500;700;900&display=swap">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 <!-- Куда отправлять заявки (Formspree, свой API, вебхук Telegram-бота). Пусто — демо-режим. -->
 <meta name="eh-form-endpoint" content="https://event-horizon-form.kunymmenin.workers.dev">
 
@@ -110,6 +110,7 @@
 <div id="css3d" aria-hidden="false"></div>
 <svg id="leaders" aria-hidden="true"></svg>
 <div id="hover-label" class="hud-label mono" aria-hidden="true"><b></b><span></span></div>
+<button class="bh-hint mono" id="bh-hint" type="button" tabindex="-1" aria-hidden="true"><i></i><span data-i18n="bhHintShort">нажмите на горизонт</span></button>
 
 <!-- ═══════════ НАВИГАЦИЯ ═══════════ -->
 <header class="nav">
@@ -383,6 +384,6 @@
 
 <noscript><style>#preloader{display:none}.scene .stage{position:relative}</style></noscript>
 <!-- Собранный бандл (build.sh) — работает и при открытии файла двойным щелчком -->
-<script src="js/bundle.js?v=8" defer></script>
+<script src="js/bundle.js?v=9" defer></script>
 </body>
 </html>

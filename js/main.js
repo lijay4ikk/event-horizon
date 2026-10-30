@@ -235,6 +235,7 @@ function closeWork() {
   audio.click();
 }
 $('#md-close').addEventListener('click', closeWork);
+$('#bh-hint').addEventListener('click', () => window.__ehGW?.());
 $('.md-backdrop').addEventListener('click', closeWork);
 
 // ═══════════════ 3D ═══════════════
@@ -357,8 +358,10 @@ async function boot() {
   const focus = { idx: -1, mix: 0, target: 0, ang: 0 };
   // гравитационная волна от чёрной дыры (клик/касание на первом экране)
   const gw = { t0: -99, x: .5, y: .5, used: false, hinted: false };
+  window.__ehGW = () => gravWave();
   function gravWave() {
     if (S.time - gw.t0 < .9) return;
+    $('#bh-hint').classList.remove('show');
     const c = bhScreen();
     gw.t0 = S.time; gw.x = c.x / innerWidth; gw.y = 1 - c.y / innerHeight; gw.used = true;
     audio.gwave(); stats.event('gwave');
@@ -769,6 +772,17 @@ async function boot() {
     const gwAge = S.time - gw.t0;
     const gwHit = gwAge > .5 && gwAge < 3.6 ? Math.exp(-(gwAge - .5) * 1.4) : 0;
     if (touch && S.introDone && !gw.used && !gw.hinted && ti > 9 && S.T < .05) { gw.hinted = true; toast(i18n.d.gwTouch, 3500); }
+    // метка у горизонта: появляется после интро, пока волну не запустили
+    const hintOn = !touch && S.introDone && !gw.used && ti > 6.5 && S.T < .05 && !reduced;
+    const hintEl = $('#bh-hint');
+    if (hintOn) {
+      const c = bhScreen();
+      hintEl.style.transform = `translate(${(c.x + c.r * 1.25).toFixed(0)}px, ${(c.y - c.r * 1.15).toFixed(0)}px)`;
+    }
+    if (hintOn !== hintEl.classList.contains('show')) hintEl.classList.toggle('show', hintOn);
+    // свист при нырке сквозь пояс астероидов
+    if ((S.prevCam ?? 0) < 1.985 !== S.camT < 1.985 && Math.abs(S.camT - 1.985) < .05) audio.whoosh();
+    S.prevCam = S.camT;
     const arrive = reduced ? 1 : smooth(0, 5.2, ti);
     const introOffset = -.2 * (1 - (1 - Math.pow(1 - arrive, 3)));
     if (S.launched && !introTitleDone && ti > (reduced ? 1.2 : 4.6)) {
