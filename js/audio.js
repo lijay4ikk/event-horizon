@@ -41,6 +41,11 @@ export class AudioEngine {
     this.buildStation();
     this.buildPlanets();
     this.buildMusic();
+    // шелест при облёте чёрной дыры: громкость = скорость перетаскивания
+    const sw = this.layers.swish = this.gain(0);
+    const sn = this.src(this.brownBuf), sbp = ctx.createBiquadFilter(); sbp.type = 'bandpass'; sbp.frequency.value = 420; sbp.Q.value = .9;
+    sn.connect(sbp); sbp.connect(sw); sw.connect(this.verbIn); sn.start();
+    this.swishFilter = sbp;
     this.ui = ctx.createGain(); this.ui.gain.value = .5; this.ui.connect(this.bus); this.ui.connect(this.verbIn);
     this.ready = true;
     this.scheduler = setInterval(() => this.schedule(), 60);
@@ -404,6 +409,8 @@ export class AudioEngine {
     this.musicSlow = s.slow ?? 1;
     const key = s.tess > .5 ? 1 : 0;
     if (key !== this.musicKey) { this.musicKey = key; this.step = 0; }
+    set(this.layers.swish, Math.min(1.2, (s.swish || 0)) * .9, .08);
+    this.swishFilter.frequency.setTargetAtTime(300 + Math.min(1, s.swish || 0) * 900, t, .1);
     this.tickLevel = s.tick;
     this.hyper = s.hyper;
   }

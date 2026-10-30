@@ -870,6 +870,7 @@ async function boot() {
     sampleCamera(ct, cam);
     // облёт: вращаем камеру и цель вокруг ЧД; при скролле плавно возвращаемся
     if (S.T > .2 && !orbit.drag) { orbit.ty = 0; orbit.tp = 0; }
+    orbit.speed = (orbit.speed || 0) * Math.pow(.02, dt) + (Math.abs(orbit.ty - orbit.yaw) + Math.abs(orbit.tp - orbit.pitch)) * dt * 4;
     orbit.yaw += (orbit.ty - orbit.yaw) * Math.min(1, dt * 4);
     orbit.pitch += (orbit.tp - orbit.pitch) * Math.min(1, dt * 4);
     const ow = 1 - smooth(.02, .16, S.camT);
@@ -1046,6 +1047,7 @@ async function boot() {
       // музыка молчит в туннеле, у горизонта замедляется вместе со временем
       music: (S.introDone ? 1 : 0) * (.55 + .25 * planetsMix) * (1 - st.tunnel) * (1 - .55 * st.worm * st.wormProg) * (1 - .35 * horizonFreeze),
       slow: Math.abs(timeScale) / (S.hyper ? 5 : 1),
+      swish: (orbit.speed || 0) * 6 * (1 - smooth(.02, .16, S.camT)),
       planets: PLANETS.map(p => {
         const d = camera.position.distanceTo(p.pos);
         const sp = project(p.pos);
