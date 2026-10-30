@@ -40,6 +40,7 @@ export class AudioEngine {
     this.buildWind();
     this.buildStation();
     this.buildPlanets();
+    this.buildMusic();
     this.ui = ctx.createGain(); this.ui.gain.value = .5; this.ui.connect(this.bus); this.ui.connect(this.verbIn);
     this.ready = true;
     this.scheduler = setInterval(() => this.schedule(), 60);
@@ -188,6 +189,42 @@ export class AudioEngine {
     });
   }
 
+  // ── музыка: арпеджио «стеклянного пиано» в ритм часам (восьмая = полтика) ──
+  buildMusic() {
+    const ctx = this.ctx;
+    this.music = this.gain(0, null);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200; lp.Q.value = .3;
+    this.music.connect(lp); lp.connect(this.bus);
+    const wet = ctx.createGain(); wet.gain.value = 1.4; lp.connect(wet); wet.connect(this.verbIn);
+    this.musicFilter = lp;
+    this.musicLevel = 0; this.musicSlow = 1; this.musicKey = 0;
+    this.nextNote = 0; this.step = 0;
+    // 0 — путь (ля минор), 1 — тессеракт (до мажор)
+    this.PROG = [
+      [[45, 57, 60, 64, 71], [41, 53, 57, 60, 64], [36, 52, 55, 60, 67], [43, 55, 59, 62, 69]],
+      [[36, 55, 60, 64, 67], [41, 57, 60, 65, 69], [43, 55, 62, 67, 71], [36, 55, 64, 67, 72]],
+    ];
+    this.ARP = [1, 2, 3, 4, 3, 2, 3, 1];
+  }
+  note(t, n, vol, dur = 2.6) {
+    const ctx = this.ctx, f = midi(n);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    [[1, .8], [2, .18], [4.01, .05]].forEach(([m, v]) => {
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f * m;
+      const og = ctx.createGain(); og.gain.value = v; o.connect(og); og.connect(g); o.start(t); o.stop(t + dur + .05);
+    });
+    g.connect(this.music);
+  }
+  playStep(t) {
+    const prog = this.PROG[this.musicKey];
+    const chord = prog[Math.floor(this.step / 8) % prog.length];
+    const i = this.step % 8;
+    if (i === 0) this.note(t, chord[0], .3, 5.5);                       // бас на смене аккорда
+    if (Math.random() > .14 || i === 0) this.note(t, chord[this.ARP[i]] + (i === 6 && Math.random() < .3 ? 12 : 0), .17 + (i === 0 ? .05 : 0));
+    this.step++;
+  }
+
   // ── тиканье: 1 тик = 1,25 с ─────────────────────────────────────
   schedule() {
     if (!this.ready) return;
@@ -196,6 +233,11 @@ export class AudioEngine {
     while (this.nextTick < ctx.currentTime + .2) {
       if (this.tickLevel > .02) this.tick(this.nextTick, this.tickLevel);
       this.nextTick += 1.25 / (this.hyper ? 2 : 1);
+    }
+    if (this.nextNote < ctx.currentTime) this.nextNote = ctx.currentTime + .05;
+    while (this.nextNote < ctx.currentTime + .25) {
+      if (this.musicLevel > .02) this.playStep(this.nextNote);
+      this.nextNote += .625 / Math.max(this.musicSlow, .1) / (this.hyper ? 1.5 : 1);
     }
   }
   tick(t, level = 1) {
@@ -341,10 +383,10 @@ export class AudioEngine {
     if (!this.ready || !this.on) return;
     const t = this.ctx.currentTime, k = .35;
     const set = (node, v, tc = k) => node.gain.setTargetAtTime(v, t, tc);
-    set(this.layers.drone, (.32 + s.tunnel * .25) * (1 - s.tess * .7) * s.life);
+    set(this.layers.drone, (.32 + s.tunnel * .15) * (1 - s.tess * .7) * s.life);
     set(this.layers.heroPad, s.hero * .9 * s.life);
     set(this.layers.station, s.station * .38);
-    set(this.layers.wind, s.worm * .55 + s.tunnel * .5);
+    set(this.layers.wind, s.worm * .55 + s.tunnel * .38);
     this.windFilter.frequency.setTargetAtTime(300 + s.wormProg * 2600, t, .2);
     this.windFilter2.frequency.setTargetAtTime(900 + s.wormProg * 3200, t, .2);
     set(this.layers.organ, s.organ * .55, .8);
@@ -357,6 +399,11 @@ export class AudioEngine {
       set(v.g, p.gain * .7, .3);
       if (v.pan) v.pan.pan.setTargetAtTime(Math.max(-1, Math.min(1, p.pan)), t, .2);
     });
+    set(this.music, (s.music ?? 0) * 1.1, .8);
+    this.musicLevel = s.music ?? 0;
+    this.musicSlow = s.slow ?? 1;
+    const key = s.tess > .5 ? 1 : 0;
+    if (key !== this.musicKey) { this.musicKey = key; this.step = 0; }
     this.tickLevel = s.tick;
     this.hyper = s.hyper;
   }

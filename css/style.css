@@ -495,6 +495,7 @@ html.webgl:not(.touch) #cursor { display: block; }
 #cursor.magnet .c-ring { border-color: rgba(255,244,224,.9); }
 #cursor.down .c-ring { transform: scale(.8); }
 #cursor.hidden { opacity: 0; }
+#cursor.lens .c-ring, #cursor.lens .c-dot { opacity: 0; transition: opacity .4s; }
 
 /* ═══════════ АДАПТИВ ═══════════ */
 @media (max-width: 1024px) {

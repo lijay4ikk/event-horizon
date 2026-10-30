@@ -525,6 +525,7 @@ uniform float uSat;
 uniform float uScan;
 uniform vec4 uRipple;   // xy центр (uv), z возраст (с), w сила
 uniform float uAspect;
+uniform vec4 uLens;     // xy центр (uv), z радиус Эйнштейна (доля высоты), w сила
 
 vec3 aces(vec3 x) {
   const float a = 2.51, b = .03, c = 2.43, d = .59, e = .14;
@@ -549,6 +550,17 @@ void main() {
       gwGlow += exp(-pow((d - r) * 26.0, 2.0)) * fade * (k == 0 ? 1.0 : .4) * (.55 + .45 * cos(2.0 * ang));
     }
   }
+  // гравитационный курсор: точечная масса, линзирующая всё за ней
+  float lensShadow = 0.0, lensRing = 0.0;
+  if (uLens.w > .001) {
+    vec2 dv = (uv - uLens.xy) * vec2(uAspect, 1.0);
+    float d = length(dv);
+    float re = uLens.z * uLens.w;
+    float defl = re * re / max(d, re * .3) * (1.0 - smoothstep(re * 5.0, re * 11.0, d));
+    uv -= dv / max(d, 1e-5) * defl / vec2(uAspect, 1.0);
+    lensShadow = 1.0 - smoothstep(re * .40, re * .56, d);
+    lensRing = exp(-pow((d - re * .6) / (re * .07), 2.0)) * uLens.w;
+  }
   uv = clamp(uv, .002, .998);
   vec2 dir = uv - .5;
   float d2 = dot(dir, dir);
@@ -564,6 +576,8 @@ void main() {
   col += bl * uBloom;
   vec3 fl = texture2D(tFlare, uv).rgb;
   col += fl * vec3(.55, .78, 1.0) * uFlare;
+  col *= 1.0 - lensShadow;
+  col += vec3(1.0, .74, .45) * lensRing * .55;
   col *= uExposure;
   col += vec3(.55, .75, 1.0) * gwGlow * .045 * uRipple.w;
   col = aces(col);

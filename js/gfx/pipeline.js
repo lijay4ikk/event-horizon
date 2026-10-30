@@ -34,7 +34,7 @@ export class Pipeline {
       uBloom: { value: .9 }, uFlare: { value: .5 }, uCA: { value: .2 }, uExposure: { value: 1.0 },
       uFade: { value: 0 }, uFlash: { value: 0 }, uFlashColor: { value: new THREE.Color(1, .95, .85) },
       uShake: { value: new THREE.Vector2() }, uSat: { value: 1.0 }, uScan: { value: 0 },
-      uRipple: { value: new THREE.Vector4(.5, .5, 0, 0) }, uAspect: { value: 1 },
+      uRipple: { value: new THREE.Vector4(.5, .5, 0, 0) }, uAspect: { value: 1 }, uLens: { value: new THREE.Vector4(.5, .5, .034, 0) },
     });
     this.final = this.finalMat.uniforms;
 

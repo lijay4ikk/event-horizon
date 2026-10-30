@@ -8,6 +8,7 @@ import { TitleParticles } from './scene/title.js';
 import { Gallery } from './scene/gallery.js';
 import { Belt } from './scene/belt.js';
 import { Motes } from './scene/motes.js';
+import { Comets } from './scene/comets.js';
 import { sampleCamera, PLANETS, PLANET_T, smooth, win } from './scene/world.js';
 import { AudioEngine } from './audio.js';
 import { I18n } from './i18n.js';
@@ -286,6 +287,8 @@ async function boot() {
   world.add(belt.group);
   const motes = new Motes(tierName === 'low' ? 220 : 420);
   world.add(motes.points);
+  const comets = new Comets(tierName === 'low' ? 1 : 2);
+  world.add(comets.group);
   pre.set(.34);
   await nextFrame();
 
@@ -369,6 +372,14 @@ async function boot() {
     const c = bhScreen();
     gw.t0 = S.time; gw.x = c.x / innerWidth; gw.y = 1 - c.y / innerHeight; gw.used = true;
     audio.gwave(); stats.event('gwave');
+  }
+  // гравитационный курсор на первом экране: мышь (или палец) — маленькая масса
+  const lens = { x: .5, y: .5, s: 0, touchOn: false, tx: 0, ty: 0 };
+  if (touch) {
+    const tp = e => { const t = e.touches[0]; if (t) { lens.tx = t.clientX; lens.ty = t.clientY; lens.touchOn = true; } };
+    addEventListener('touchstart', e => { tp(e); lens.x = lens.tx / innerWidth; lens.y = 1 - lens.ty / innerHeight; }, { passive: true });
+    addEventListener('touchmove', tp, { passive: true });
+    addEventListener('touchend', () => { lens.touchOn = false; }, { passive: true });
   }
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2(-9, -9);
@@ -766,7 +777,7 @@ async function boot() {
 
   window.__eh = {
     launch, state: S, lenis: () => lenis, jump(T) { lenis.scrollTo(yFromT(T), { immediate: true, force: true }); S.camT = T; S.T = T; },
-    openPlanet, closePlanet, openWork, playMorse, quality: () => ({ tier: tierName, ...pipe.q, steps: cosmos.bh.uniforms.uSteps.value }),
+    audio, openPlanet, closePlanet, openWork, playMorse, comet: () => { comets.next = 0; }, quality: () => ({ tier: tierName, ...pipe.q, steps: cosmos.bh.uniforms.uSteps.value }),
   };
   if (new URLSearchParams(location.search).has('autostart')) launch(false);
 
@@ -914,7 +925,8 @@ async function boot() {
     // сцена
     pipe.beginScene();
     motes.update(S.sim, camera, reduced ? 0 : st.tess, innerHeight * pipe.q.dpr * .02);
-    if (station.group.visible || planets.group.visible || belt.group.visible || motes.points.visible) pipe.renderScene(world, camera);
+    comets.update(dt, camera, S.introDone && !reduced && S.camT < 2.9 && !focus.target);
+    if (station.group.visible || planets.group.visible || belt.group.visible || motes.points.visible || comets.group.visible) pipe.renderScene(world, camera);
 
     // частицы заголовка
     const holeP = project(new THREE.Vector3(0, 0, 0));
@@ -941,6 +953,17 @@ async function boot() {
     // кино-полосы в кульминации (кротовая нора) и при падении за горизонт
     const lb = Math.max(win(S.camT, 3.28, 3.48, 3.9, 4.06), win(S.camT, 4.66, 4.82, 5.02, 5.12), focus.mix * .55);
     if (Math.abs(lb - (S.lb ?? -1)) > .003) { S.lb = lb; html.style.setProperty('--lb', lb.toFixed(3)); }
+    // гравитационный курсор
+    {
+      const heroLens = S.introDone && !reduced && !modalOpen ? 1 - smooth(.03, .2, S.T) : 0;
+      const on = touch ? lens.touchOn : cursor.active && !cursor.mag && !cursor.el.classList.contains('hidden');
+      const px = touch ? lens.tx : cursor.x, py = touch ? lens.ty : cursor.y;
+      const k = Math.min(1, dt * 22);
+      lens.x += (px / innerWidth - lens.x) * k; lens.y += (1 - py / innerHeight - lens.y) * k;
+      lens.s += ((on ? heroLens : 0) - lens.s) * Math.min(1, dt * (on ? 3 : 5));
+      F.uLens.value.set(lens.x, lens.y, touch ? .056 : .044, lens.s < .002 ? 0 : lens.s);
+      cursor.el.classList.toggle('lens', lens.s > .35);
+    }
     F.uRipple.value.set(gw.x, gw.y, Math.max(0, gwAge - .5), gwAge > .5 && gwAge < 3.6 && !reduced ? 1 : 0);
     const exitFlash = win(S.camT, 3.88, 3.93, 3.96, 4.04);
     const tessFlash = win(S.camT, 4.97, 5.0, 5.03, 5.1);
@@ -966,6 +989,9 @@ async function boot() {
       tess: st.tess, life: 1 - horizonFreeze * .7,
       horizonCut: 18000 - horizonFreeze * 17300,
       tick: st.tess * .7, hyper: S.hyper,
+      // музыка молчит в туннеле, у горизонта замедляется вместе со временем
+      music: (S.introDone ? 1 : 0) * (.55 + .25 * planetsMix) * (1 - st.tunnel) * (1 - .55 * st.worm * st.wormProg) * (1 - .35 * horizonFreeze),
+      slow: Math.abs(timeScale) / (S.hyper ? 5 : 1),
       planets: PLANETS.map(p => {
         const d = camera.position.distanceTo(p.pos);
         const sp = project(p.pos);
