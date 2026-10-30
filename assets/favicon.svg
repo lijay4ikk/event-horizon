@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#FF6A1A"/><stop offset=".45" stop-color="#FFF4E0"/><stop offset="1" stop-color="#FFB347"/>
+      <animateTransform attributeName="gradientTransform" type="translate" values="-0.4 0;0.4 0;-0.4 0" dur="4s" repeatCount="indefinite"/>
+    </linearGradient>
+    <radialGradient id="h" r=".5"><stop offset=".55" stop-color="#FFB347" stop-opacity=".0"/><stop offset=".72" stop-color="#FFB347" stop-opacity=".55"/><stop offset="1" stop-color="#FFB347" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#030305"/>
+  <circle cx="32" cy="32" r="21" fill="url(#h)"/>
+  <path d="M8 32a24 7 0 0 1 48 0" fill="none" stroke="url(#g)" stroke-width="3" opacity=".7"/>
+  <circle cx="32" cy="32" r="11.5" fill="none" stroke="#FFE2B0" stroke-width="2.4"/>
+  <circle cx="32" cy="32" r="10" fill="#000"/>
+  <path d="M8 32a24 7 0 0 0 48 0" fill="none" stroke="url(#g)" stroke-width="3.4"/>
+</svg>

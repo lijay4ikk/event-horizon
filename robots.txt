@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://lijay4ikk.github.io/event-horizon/sitemap.xml
