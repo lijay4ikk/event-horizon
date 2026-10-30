@@ -212,7 +212,7 @@ html.at-footer .minimap { opacity: .25 !important; transition-delay: 0s; }
 .scene { position: relative; }
 #hero     { height: 230vh; }
 #about    { height: 420vh; }
-#services { height: 560vh; }
+#services { height: 640vh; }
 #wormhole { height: 300vh; }
 #works    { height: 340vh; }
 #contact  { height: 190vh; }
@@ -317,14 +317,20 @@ html.webgl .works-list { position: absolute !important; width: 1px; height: 1px;
 @keyframes nudge { 50% { transform: translateX(-5px); } }
 
 /* CSS3D карточки */
-.card3d {
-  width: 340px; padding: 12px; pointer-events: auto; user-select: none; -webkit-user-select: none;
+.card3d.is3d { width: 340px; padding: 0; background: none; border: 0; box-shadow: none; perspective: 900px; pointer-events: auto; }
+.card3d:not(.is3d), .card3d.is3d > .c3-in {
+  width: 340px; padding: 12px; pointer-events: auto; user-select: none; -webkit-user-select: none; position: relative;
   background: linear-gradient(150deg, rgba(255,255,255,.10), rgba(10,14,20,.35) 40%, rgba(159,216,255,.05));
   border: 1px solid rgba(255,255,255,.18); border-radius: 4px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 40px rgba(159,216,255,.06), 0 30px 80px rgba(0,0,0,.5);
   color: var(--hot); transition: border-color .3s, box-shadow .3s;
 }
-.card3d:hover { border-color: rgba(159,216,255,.7); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 60px rgba(159,216,255,.14), 0 0 60px rgba(159,216,255,.25); }
+.card3d.is3d > .c3-in { transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .5s var(--ease-out), border-color .3s, box-shadow .3s; transform-style: preserve-3d; }
+.card3d.is3d.tilt > .c3-in { transition: transform .08s linear, border-color .3s, box-shadow .3s; }
+.card3d .c3-glare { position: absolute; inset: 0; pointer-events: none; border-radius: 4px; opacity: 0; transition: opacity .4s; background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 0%), rgba(255,255,255,.22), rgba(159,216,255,.06) 30%, transparent 55%); mix-blend-mode: screen; }
+.card3d.tilt .c3-glare { opacity: 1; }
+.card3d.is3d:hover > .c3-in,
+.card3d:not(.is3d):hover { border-color: rgba(159,216,255,.7); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 60px rgba(159,216,255,.14), 0 0 60px rgba(159,216,255,.25); }
 .card3d .c3-img { position: relative; aspect-ratio: 16/10; overflow: hidden; border-radius: 2px; }
 .card3d .c3-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
 .card3d:hover .c3-img img { transform: scale(1.06); }
@@ -434,6 +440,13 @@ html.webgl .works-list { position: absolute !important; width: 1px; height: 1px;
 .md-meta { display: grid; grid-template-columns: auto 1fr; gap: 8px 24px; font-size: 12px; margin: 26px 0 0; }
 .md-meta dt { color: var(--ash); letter-spacing: .14em; }
 .md-meta dd { margin: 0; color: var(--hot); }
+
+/* ═══════════ КИНО-ПОЛОСЫ ═══════════ */
+.letterbox { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+.letterbox i { position: absolute; left: 0; right: 0; height: calc(var(--lb, 0) * 11vh); background: #000; transition: height .05s linear; }
+.letterbox i:first-child { top: 0; box-shadow: 0 1px 0 rgba(255,179,71,calc(var(--lb, 0) * .35)); }
+.letterbox i:last-child { bottom: 0; box-shadow: 0 -1px 0 rgba(255,179,71,calc(var(--lb, 0) * .35)); }
+@media (max-width: 768px) { .letterbox i { height: calc(var(--lb, 0) * 7vh); } }
 
 /* ═══════════ ГИПЕРСКОРОСТЬ ═══════════ */
 .hyper-lines { position: fixed; inset: -20%; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .8s ease;

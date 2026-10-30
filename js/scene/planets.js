@@ -106,6 +106,45 @@ void main(){
   sand = mix(sand, vec3(.98, .78, .52), storm * .85);
   alb = sand;
   spec = pow(max(dot(N, H), 0.0), 20.0) * .08;
+#elif TYPE == 4
+  // газовый гигант: полосы с дифференциальным вращением и вечный шторм
+  float lat = p.y;
+  float sp = .018 + .045 * sin(lat * 9.0) + .02 * sin(lat * 23.0);
+  float ra = uTime * sp;
+  vec3 q = vec3(p.x * cos(ra) - p.z * sin(ra), p.y, p.x * sin(ra) + p.z * cos(ra));
+  float turb = fbm(q * vec3(2.2, 7.0, 2.2) + 3.0);
+  float fine = fbm3o(q * vec3(6.0, 22.0, 6.0) + turb * 2.0);
+  float bands = .5 + .5 * sin(lat * 21.0 + turb * 3.4);
+  float bands2 = .5 + .5 * sin(lat * 61.0 + fine * 4.0 + turb * 2.0);
+  vec3 cream = vec3(.90, .80, .64), rust = vec3(.66, .40, .25), choc = vec3(.36, .21, .14), pale = vec3(.97, .93, .86);
+  alb = mix(rust, cream, smoothstep(.25, .75, bands));
+  alb = mix(alb, choc, smoothstep(.75, 1.0, 1.0 - bands) * .55);
+  alb = mix(alb, pale, pow(bands2, 5.0) * .45);
+  alb *= .85 + .3 * fine;
+  // шторм: овальный вихрь в южном полушарии
+  float lon = atan(q.x, q.z);
+  vec2 sd = vec2(lon - .7, (lat + .3) * 2.2);
+  float sr = length(sd);
+  float swirlA = 11.0 * exp(-sr * 6.0) + uTime * .15;
+  vec2 sw = mat2(cos(swirlA), -sin(swirlA), sin(swirlA), cos(swirlA)) * sd;
+  float storm = 1.0 - smoothstep(.2, .3, sr);
+  float stormTex = fbm3o(vec3(sw * 8.0, 1.7));
+  vec3 stormC = mix(vec3(.62, .14, .06), vec3(.98, .55, .32), stormTex * smoothstep(.0, .25, sr) + .1);
+  alb = mix(alb, stormC, storm * .95);
+  float ringC = 1.0 - smoothstep(.0, .06, abs(sr - .31));
+  alb = mix(alb, vec3(.99, .95, .88), ringC * (.55 + .45 * fbm3o(vec3(sw * 14.0, 4.0))));
+  spec = pow(max(dot(N, H), 0.0), 12.0) * .05;
+#elif TYPE == 5
+  // луна: серый реголит и кратеры
+  vec2 cr = voronoi(p * 5.0);
+  float rimC = smoothstep(.10, .0, abs(cr.x - .32)) * .6;
+  float bowl = 1.0 - smoothstep(.0, .3, cr.x);
+  float mare = smoothstep(.5, .7, fbm(p * 2.0 + 9.0));
+  alb = vec3(.52, .50, .48) * (.75 + .4 * fbm3o(p * 12.0));
+  alb = mix(alb, vec3(.24, .23, .23), mare * .7);
+  alb *= 1.0 - bowl * .35;
+  alb += rimC * .18;
+  spec = 0.0;
 #else
   // вулканический мир
   vec2 vr = voronoi(p * 4.2 + vec3(0.0, uTime * .01, 0.0));
@@ -123,7 +162,7 @@ void main(){
 #endif
 
   float fd = max(dot(N, uFill), 0.0);
-  col += alb * (sun * diff + mix(vec3(.30, .42, .62), vec3(.55, .45, .4), float(TYPE == 2)) * fd * .55);
+  col += alb * (sun * diff + mix(vec3(.30, .42, .62), vec3(.58, .46, .38), float(TYPE == 2 || TYPE == 4)) * fd * .55);
   col += sun * spec * smoothstep(0.0, .2, ndl);
   col += vec3(.5, .65, .9) * pow(max(dot(N, normalize(uFill + V)), 0.0), 40.0) * .12 * fd;
   float rim = pow(1.0 - max(dot(N, V), 0.0), 3.5);
@@ -167,6 +206,8 @@ void main(){
   gl_FragColor = vec4(c * a, a);
 }`;
 
+const moonFrag = frag(5);
+
 export class Planets {
   constructor() {
     this.group = new THREE.Group();
@@ -183,6 +224,8 @@ export class Planets {
       });
       const mesh = new THREE.Mesh(sphere, mat);
       mesh.scale.setScalar(cfg.radius);
+      // повернуть планету «лицом» (штормом) к камере
+      if (cfg.camMid) { const d = cfg.camMid.clone().sub(cfg.pos); mesh.rotation.y = Math.atan2(d.x, d.z) - (cfg.faceLon || 0); }
       holder.add(mesh);
       const shell = 1.18;
       const am = new THREE.Mesh(sphere, new THREE.ShaderMaterial({
@@ -202,14 +245,26 @@ export class Planets {
         rm.rotation.x = Math.PI / 2 - .12;
         holder.add(rm);
       }
+      const moons = (cfg.moons || []).map(m => {
+        const mm = new THREE.Mesh(sphere, new THREE.ShaderMaterial({
+          vertexShader: vert, fragmentShader: moonFrag,
+          uniforms: { uTime: { value: 0 }, uAtmo: { value: new THREE.Color(0, 0, 0) }, uHover: { value: 0 }, uFill: mat.uniforms.uFill },
+        }));
+        mm.scale.setScalar(m.r);
+        const pivot = new THREE.Group(); pivot.rotation.x = m.incl; pivot.rotation.y = m.phase;
+        mm.position.set(m.orbit, 0, 0);
+        pivot.add(mm); holder.add(pivot);
+        return { m, pivot, mesh: mm };
+      });
       this.group.add(holder);
-      this.items.push({ cfg, holder, mesh, mat, hover: 0, sphere: new THREE.Sphere(cfg.pos.clone(), cfg.radius * 1.05) });
+      this.items.push({ cfg, holder, mesh, mat, moons, hover: 0, sphere: new THREE.Sphere(cfg.pos.clone(), cfg.radius * 1.05) });
     });
   }
 
   update(time, dt, hoveredIndex) {
     for (const [i, it] of this.items.entries()) {
       it.mesh.rotation.y += dt * it.cfg.spin;
+      for (const mo of it.moons) { mo.pivot.rotation.y += dt * mo.m.speed; mo.mesh.rotation.y += dt * .05; }
       it.mat.uniforms.uTime.value = time;
       it.hover += ((i === hoveredIndex ? 1 : 0) - it.hover) * Math.min(1, dt * 8);
       it.mat.uniforms.uHover.value = it.hover;

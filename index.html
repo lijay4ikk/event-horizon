@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;600&family=Unbounded:wght@300;500;700;900&display=swap">
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=8">
 <!-- Куда отправлять заявки (Formspree, свой API, вебхук Telegram-бота). Пусто — демо-режим. -->
 <meta name="eh-form-endpoint" content="https://event-horizon-form.kunymmenin.workers.dev">
 
@@ -215,36 +215,43 @@
   <section id="services" class="scene" data-scene="2" aria-labelledby="services-title">
     <div class="stage">
       <header class="scene-head scene-head--top">
-        <p class="eyebrow mono" data-scramble>⌐ SCN 02 · <span data-i18n="servEyebrow">система из четырёх миров</span> ¬</p>
+        <p class="eyebrow mono" data-scramble>⌐ SCN 02 · <span data-i18n="servEyebrow">система из пяти миров</span> ¬</p>
         <h2 id="services-title" class="scene-title" data-i18n="servTitle">Планеты</h2>
       </header>
       <article class="service" data-planet="0">
-        <p class="sv-id mono">THALASSA-b <i>·</i> 01/04</p>
+        <p class="sv-id mono">THALASSA-b <i>·</i> 01/05</p>
         <h3 data-i18n="s1h">Иммерсивные сайты</h3>
         <p data-i18n="s1p">WebGL-лендинги и промо-страницы, где скролл превращается в кино. Шейдеры, 3D, звук и честные 60 FPS.</p>
         <div class="dilation mono"><span data-i18n="s1d">1 час здесь = 7 лет на Земле</span><b data-dil="61320">LOCAL 00:00:00 · EARTH 0y 000d</b></div>
         <button class="btn-ghost" data-open-planet="0" data-magnetic><span data-i18n="more">Подробнее</span> <i>→</i></button>
       </article>
       <article class="service" data-planet="1">
-        <p class="sv-id mono">NIVALIS-c <i>·</i> 02/04</p>
+        <p class="sv-id mono">NIVALIS-c <i>·</i> 02/05</p>
         <h3 data-i18n="s2h">Продуктовый дизайн</h3>
         <p data-i18n="s2p">Интерфейсы, которые хочется трогать: исследования, прототипы, дизайн-системы и анимация состояний.</p>
         <div class="dilation mono"><span data-i18n="s2d">1 день здесь = 3 недели на Земле</span><b data-dil="21">LOCAL 00:00:00 · EARTH 0y 000d</b></div>
         <button class="btn-ghost" data-open-planet="1" data-magnetic><span data-i18n="more">Подробнее</span> <i>→</i></button>
       </article>
       <article class="service" data-planet="2">
-        <p class="sv-id mono">ARIDA-d <i>·</i> 03/04</p>
+        <p class="sv-id mono">ARIDA-d <i>·</i> 03/05</p>
         <h3 data-i18n="s3h">Моушн и 3D-графика</h3>
         <p data-i18n="s3p">Ролики, продуктовые рендеры, анимированные айдентики и реалтайм-3D для презентаций и соцсетей.</p>
         <div class="dilation mono"><span data-i18n="s3d">1 минута здесь = 4 часа на Земле</span><b data-dil="240">LOCAL 00:00:00 · EARTH 0y 000d</b></div>
         <button class="btn-ghost" data-open-planet="2" data-magnetic><span data-i18n="more">Подробнее</span> <i>→</i></button>
       </article>
       <article class="service" data-planet="3">
-        <p class="sv-id mono">IGNIS-e <i>·</i> 04/04</p>
+        <p class="sv-id mono">IGNIS-e <i>·</i> 04/05</p>
         <h3 data-i18n="s4h">Звук и креативные технологии</h3>
         <p data-i18n="s4p">Саунд-дизайн, генеративная музыка, AR и медиаинсталляции, то есть всё, что не помещается в обычный браузер.</p>
         <div class="dilation mono"><span data-i18n="s4d">1 секунда здесь = 1 сутки на Земле</span><b data-dil="86400">LOCAL 00:00:00 · EARTH 0y 000d</b></div>
         <button class="btn-ghost" data-open-planet="3" data-magnetic><span data-i18n="more">Подробнее</span> <i>→</i></button>
+      </article>
+      <article class="service" data-planet="4">
+        <p class="sv-id mono">JOVIA-f <i>·</i> 05/05</p>
+        <h3 data-i18n="s5h">Бренд-миры и айдентика</h3>
+        <p data-i18n="s5p">Логотип как система, а не картинка: айдентика, которая живёт в 3D, в движении и в звуке, и гайдлайны, по которым её легко развивать.</p>
+        <div class="dilation mono"><span data-i18n="s5d">1 сутки здесь = 10 часов · шторм длится 350 лет</span><b data-dil="1">LOCAL 00:00:00 · EARTH 0y 000d</b></div>
+        <button class="btn-ghost" data-open-planet="4" data-magnetic><span data-i18n="more">Подробнее</span> <i>→</i></button>
       </article>
     </div>
   </section>
@@ -367,6 +374,7 @@
 </div>
 
 <div class="hyper-lines" aria-hidden="true"></div>
+<div class="letterbox" aria-hidden="true"><i></i><i></i></div>
 <div class="rewind mono" id="rewind" aria-hidden="true"><b>◀◀</b> REWIND <span id="rw-x">×64</span></div>
 <div class="flash" id="flash" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
@@ -375,6 +383,6 @@
 
 <noscript><style>#preloader{display:none}.scene .stage{position:relative}</style></noscript>
 <!-- Собранный бандл (build.sh) — работает и при открытии файла двойным щелчком -->
-<script src="js/bundle.js?v=7" defer></script>
+<script src="js/bundle.js?v=8" defer></script>
 </body>
 </html>

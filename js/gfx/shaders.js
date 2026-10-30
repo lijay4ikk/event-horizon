@@ -504,6 +504,8 @@ uniform vec3 uFlashColor;
 uniform vec2 uShake;
 uniform float uSat;
 uniform float uScan;
+uniform vec4 uRipple;   // xy центр (uv), z возраст (с), w сила
+uniform float uAspect;
 
 vec3 aces(vec3 x) {
   const float a = 2.51, b = .03, c = 2.43, d = .59, e = .14;
@@ -512,7 +514,23 @@ vec3 aces(vec3 x) {
 float h12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
 
 void main() {
-  vec2 uv = clamp(vUv + uShake, .002, .998);
+  vec2 uv = vUv + uShake;
+  // гравитационная волна: кольцо с квадрупольной поляризацией (растяжение/сжатие по осям)
+  float gwGlow = 0.0;
+  if (uRipple.w > 0.0) {
+    vec2 dv = (uv - uRipple.xy) * vec2(uAspect, 1.0);
+    float d = length(dv);
+    float ang = atan(dv.y, dv.x);
+    float fade = 1.0 - smoothstep(.4, 2.6, uRipple.z);
+    for (int k = 0; k < 2; k++) {
+      float r = max(uRipple.z - float(k) * .35, 0.0) * .75;
+      float band = exp(-pow((d - r) * 7.0, 2.0));
+      float wave = sin((d - r) * 55.0) * band * (.55 + .45 * cos(2.0 * ang));
+      uv -= (dv / max(d, 1e-4)) / vec2(uAspect, 1.0) * wave * .014 * uRipple.w * fade * (k == 0 ? 1.0 : .5);
+      gwGlow += exp(-pow((d - r) * 26.0, 2.0)) * fade * (k == 0 ? 1.0 : .4) * (.55 + .45 * cos(2.0 * ang));
+    }
+  }
+  uv = clamp(uv, .002, .998);
   vec2 dir = uv - .5;
   float d2 = dot(dir, dir);
   vec2 off = dir * uCA * (.3 + d2 * 1.6) * .012;
@@ -528,6 +546,7 @@ void main() {
   vec3 fl = texture2D(tFlare, uv).rgb;
   col += fl * vec3(.55, .78, 1.0) * uFlare;
   col *= uExposure;
+  col += vec3(.55, .75, 1.0) * gwGlow * .045 * uRipple.w;
   col = aces(col);
   float l = dot(col, vec3(.2126, .7152, .0722));
   col = mix(vec3(l), col, uSat);

@@ -174,6 +174,33 @@ export class Station {
     for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; mkLight(new THREE.Vector3(Math.cos(a) * 3.6, .34, Math.sin(a) * 3.6), 0x9fd8ff, i / 6, this.spinner); }
 
     this.anchors = { core: coreAnchor, hab: habAnchor, dish: dishAnchor, solar: solarAnchor, dock: dockRing };
+
+    // челнок: облетает станцию, горит двигатель, за ним тянется след
+    const ship = this.ship = new THREE.Group();
+    const hullGeo = new THREE.CylinderGeometry(.06, .2, 1.1, 6); hullGeo.rotateX(Math.PI / 2);
+    ship.add(new THREE.Mesh(hullGeo, metal));
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(.06, .32, 6), gold); nose.rotation.x = Math.PI / 2; nose.position.z = .7; ship.add(nose);
+    const wingGeo = new THREE.BoxGeometry(.9, .025, .34); wingGeo.translate(0, 0, -.25);
+    const wing = new THREE.Mesh(wingGeo, dark); ship.add(wing);
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(.025, .26, .3), dark); fin.position.set(0, .14, -.36); ship.add(fin);
+    const cockpit = new THREE.Mesh(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x9fd8ff).multiplyScalar(2.2) }));
+    cockpit.position.set(0, .07, .32); ship.add(cockpit);
+    this.engine = new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(1, .55, .2).multiplyScalar(9), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.engine.position.z = -.6; this.engine.scale.set(1, 1, 1.8); ship.add(this.engine);
+    ship.scale.setScalar(1.15);
+    this.group.add(ship);
+    const TRAIL = 70;
+    const tg = new THREE.BufferGeometry();
+    this.trailPos = new Float32Array(TRAIL * 3);
+    const tc = new Float32Array(TRAIL * 3);
+    for (let i = 0; i < TRAIL; i++) { const k = Math.pow(1 - i / TRAIL, 2.2); tc.set([3.2 * k, 1.5 * k, .55 * k], i * 3); }
+    tg.setAttribute('position', new THREE.BufferAttribute(this.trailPos, 3));
+    tg.setAttribute('color', new THREE.BufferAttribute(tc, 3));
+    this.trail = new THREE.Line(tg, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.trail.frustumCulled = false;
+    this.group.add(this.trail);
+    this.trailN = 0;
+    this._v = new THREE.Vector3(); this._v2 = new THREE.Vector3(); this._f = new THREE.Vector3(0, 0, 1);
     this.labels = {
       core: ['CORE', 'ядро · реактор 4.2 ГВт'],
       hab: ['HAB-RING', 'жилой контур · 0.38 g'],
@@ -187,8 +214,25 @@ export class Station {
     this.hovered = key;
   }
 
+  shipPos(t, out) {
+    // вытянутая наклонная орбита с «нырком» мимо кольца
+    const a = t * .32;
+    return out.set(Math.cos(a) * 10.5, 1.4 + Math.sin(a * 2) * 1.6 + Math.sin(a) * 1.2, Math.sin(a) * 7);
+  }
+
   update(time, dt) {
     this.spinner.rotation.y += dt * .12;
+    // челнок
+    const p = this.shipPos(time, this._v), n = this.shipPos(time + .05, this._v2);
+    this.ship.position.copy(p);
+    this.ship.quaternion.setFromUnitVectors(this._f, n.sub(p).normalize());
+    this.engine.scale.set(1, 1, 1.6 + Math.sin(time * 40) * .25);
+    const tp = this.trailPos;
+    tp.copyWithin(3, 0, tp.length - 3);
+    const back = this._v2.copy(this._f).applyQuaternion(this.ship.quaternion).multiplyScalar(-.7 * 1.15).add(p);
+    tp[0] = back.x; tp[1] = back.y; tp[2] = back.z;
+    if (this.trailN < tp.length / 3) { this.trailN++; for (let i = this.trailN; i < tp.length / 3; i++) { tp[i * 3] = back.x; tp[i * 3 + 1] = back.y; tp[i * 3 + 2] = back.z; } }
+    this.trail.geometry.attributes.position.needsUpdate = true;
     this.group.rotation.y += dt * .012;
     this.dish.rotation.x = Math.sin(time * .3) * .25;
     for (const l of this.lights) {

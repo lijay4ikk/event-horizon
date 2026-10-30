@@ -34,6 +34,7 @@ export class Pipeline {
       uBloom: { value: .9 }, uFlare: { value: .5 }, uCA: { value: .2 }, uExposure: { value: 1.0 },
       uFade: { value: 0 }, uFlash: { value: 0 }, uFlashColor: { value: new THREE.Color(1, .95, .85) },
       uShake: { value: new THREE.Vector2() }, uSat: { value: 1.0 }, uScan: { value: 0 },
+      uRipple: { value: new THREE.Vector4(.5, .5, 0, 0) }, uAspect: { value: 1 },
     });
     this.final = this.finalMat.uniforms;
 
@@ -79,6 +80,7 @@ export class Pipeline {
     this.bgMat.uniforms.tBg.value = this.bgRT.texture;
     this.bgMat.uniforms.uTexel.value.set(1 / bw, 1 / bh);
     this.final.uRes.value.set(w, h);
+    this.final.uAspect.value = w / h;
   }
 
   fs(mat, target, clear = false) {

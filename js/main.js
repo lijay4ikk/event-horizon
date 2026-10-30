@@ -6,6 +6,7 @@ import { Station, makeEnvMap } from './scene/station.js';
 import { Planets } from './scene/planets.js';
 import { TitleParticles } from './scene/title.js';
 import { Gallery } from './scene/gallery.js';
+import { Belt } from './scene/belt.js';
 import { sampleCamera, PLANETS, PLANET_T, smooth, win } from './scene/world.js';
 import { AudioEngine } from './audio.js';
 import { I18n } from './i18n.js';
@@ -247,9 +248,9 @@ async function boot() {
   const tierName = detectTier(renderer);
   stats.set('tier', tierName);
   const TIERS = {
-    high:   { dpr: Math.min(devicePixelRatio, 2),    bg: .72, steps: 220, samples: 4, particles: 14000 },
-    medium: { dpr: Math.min(devicePixelRatio, 1.5),  bg: .56, steps: 150, samples: 2, particles: 9000 },
-    low:    { dpr: Math.min(devicePixelRatio, 1.25), bg: .42, steps: 90,  samples: 0, particles: 5200 },
+    high:   { dpr: Math.min(devicePixelRatio, 2),    bg: .72, steps: 220, samples: 4, particles: 14000, rocks: 1800, dust: 7000 },
+    medium: { dpr: Math.min(devicePixelRatio, 1.5),  bg: .56, steps: 150, samples: 2, particles: 9000, rocks: 1200, dust: 4500 },
+    low:    { dpr: Math.min(devicePixelRatio, 1.25), bg: .42, steps: 90,  samples: 0, particles: 5200, rocks: 700, dust: 2500 },
   };
   const tier = { ...TIERS[tierName] };
   const tierMax = { ...tier };
@@ -278,6 +279,8 @@ async function boot() {
   world.add(fill);
   const planets = new Planets();
   world.add(planets.group);
+  const belt = new Belt(tier.rocks, tier.dust);
+  world.add(belt.group);
   pre.set(.34);
   await nextFrame();
 
@@ -352,6 +355,14 @@ async function boot() {
     mx: 0, my: 0, pmx: 0, pmy: 0, hyper: false, rewinding: false, vel: 0, lastT: 0,
   };
   const focus = { idx: -1, mix: 0, target: 0, ang: 0 };
+  // гравитационная волна от чёрной дыры (клик/касание на первом экране)
+  const gw = { t0: -99, x: .5, y: .5, used: false, hinted: false };
+  function gravWave() {
+    if (S.time - gw.t0 < .9) return;
+    const c = bhScreen();
+    gw.t0 = S.time; gw.x = c.x / innerWidth; gw.y = 1 - c.y / innerHeight; gw.used = true;
+    audio.gwave(); stats.event('gwave');
+  }
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2(-9, -9);
   let hovered = { kind: null, key: null };
@@ -376,7 +387,8 @@ async function boot() {
     if (e.target.closest('a, button, input, textarea, .card3d, .sheet, #modal, .nav, .minimap, form')) return;
     ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight * 2 - 1));
     const h = pick();
-    if (h.kind === 'planet') openPlanet(h.key);
+    if (h.kind === 'bh') gravWave();
+    else if (h.kind === 'planet') openPlanet(h.key);
     else if (h.kind === 'module') {
       const map = { core: 0, hab: 1, dish: 2, solar: 3 };
       if (map[h.key] != null) { audio.click(); lenis.scrollTo(yFromT(1.12 + map[h.key] * .205 + .07), { duration: 1.4 }); }
@@ -384,8 +396,22 @@ async function boot() {
     }
   });
 
+  // экранный центр и радиус тени чёрной дыры
+  function bhScreen() {
+    const c = project(new THREE.Vector3(0, 0, 0));
+    const dist = camera.position.length();
+    const ang = Math.asin(Math.min(1, 2.6 / dist));
+    c.r = Math.tan(ang) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * innerHeight / 2;
+    return c;
+  }
   function pick() {
     if (focus.target || modalOpen) return { kind: null };
+    if (Math.abs(ndc.x) > 1 || Math.abs(ndc.y) > 1) return { kind: null };
+    if (S.introDone && S.camT < .4) {
+      const c = bhScreen();
+      const mx = (ndc.x * .5 + .5) * innerWidth, my = (-ndc.y * .5 + .5) * innerHeight;
+      if (c.front && Math.hypot(mx - c.x, my - c.y) < c.r * 1.35) return { kind: 'bh' };
+    }
     ray.setFromCamera(ndc, camera);
     if (station.group.visible && S.camT > .8 && S.camT < 2.02) {
       const hit = ray.intersectObjects(station.pickables, false)[0];
@@ -402,7 +428,7 @@ async function boot() {
   const panel = $('#planet-panel');
   function fillPlanet(i) {
     const info = PLANET_INFO[i], t = info[i18n.lang];
-    $('#pp-id').textContent = `${info.id} · ${String(i + 1).padStart(2, '0')}/04`;
+    $('#pp-id').textContent = `${info.id} · ${String(i + 1).padStart(2, '0')}/${String(PLANET_INFO.length).padStart(2, '0')}`;
     $('#pp-title').textContent = t.t;
     $('#pp-text').textContent = t.d;
     $('#pp-gallery').innerHTML = info.arts.map((a, k) => `<img alt="" src="${makeArt(a, info.pal, 40 + i * 3 + k, k ? 640 : 960, k ? 480 : 540)}">`).join('');
@@ -471,7 +497,7 @@ async function boot() {
     { el: $('.drag-hint'), w: [4.08, 4.14, 4.55, 4.62] },
     { el: $('.contact-wrap'), w: [5.0, 5.14, 9, 10] },
     ...theses.map((el, i) => ({ el, w: [1.12 + i * .205, 1.15 + i * .205, 1.28 + i * .205, 1.31 + i * .205], panel: true })),
-    ...services.map((el, i) => ({ el, w: [PLANET_T[i] - .045, PLANET_T[i] - .015, PLANET_T[i] + .16, PLANET_T[i] + .19], panel: true })),
+    ...services.map((el, i) => ({ el, w: [PLANET_T[i] - .04, PLANET_T[i] - .012, PLANET_T[i] + .125, PLANET_T[i] + .15], panel: true })),
   ];
   fades.forEach(f => { f.op = -1; f.shown = false; f.x = null; f.y = null; });
   const heroCopy = $('.hero-copy');
@@ -576,6 +602,9 @@ async function boot() {
       if (hovered.kind === 'module') {
         name = station.labels[hovered.key][0]; sub = i18n.d.labels[hovered.key];
         anchor = project(station.anchorWorld(hovered.key, new THREE.Vector3()));
+      } else if (hovered.kind === 'bh') {
+        name = i18n.d.bhName; sub = i18n.d.bhHint;
+        anchor = project(new THREE.Vector3(0, 0, 0));
       } else {
         name = PLANET_INFO[hovered.key].id; sub = `${PLANET_INFO[hovered.key][i18n.lang].t} · ${i18n.d.planetHint}`;
         anchor = project(PLANETS[hovered.key].pos);
@@ -737,6 +766,9 @@ async function boot() {
 
     // интро
     const ti = S.launched ? S.time - S.launchTime : 0;
+    const gwAge = S.time - gw.t0;
+    const gwHit = gwAge > .5 && gwAge < 3.6 ? Math.exp(-(gwAge - .5) * 1.4) : 0;
+    if (touch && S.introDone && !gw.used && !gw.hinted && ti > 9 && S.T < .05) { gw.hinted = true; toast(i18n.d.gwTouch, 3500); }
     const arrive = reduced ? 1 : smooth(0, 5.2, ti);
     const introOffset = -.2 * (1 - (1 - Math.pow(1 - arrive, 3)));
     if (S.launched && !introTitleDone && ti > (reduced ? 1.2 : 4.6)) {
@@ -782,7 +814,7 @@ async function boot() {
     if (!reduced) { camera.rotateY(Math.sin(S.time * .11) * .007); camera.rotateX(Math.sin(S.time * .083 + 1.3) * .005); }
 
     // веса слоёв
-    st.worm = win(S.camT, 2.86, 3.02, 3.6, 3.66);
+    st.worm = win(S.camT, 2.93, 3.05, 3.6, 3.66);
     st.wormProg = smooth(2.95, 3.62, S.camT);
     st.tunnel = win(S.camT, 3.53, 3.6, 3.89, 3.97);
     st.tess = smooth(4.99, 5.09, S.camT);
@@ -790,7 +822,7 @@ async function boot() {
     const tunnelProg = smooth(3.58, 3.95, S.camT);
 
     // тряска в туннеле
-    const shake = reduced ? 0 : (st.tunnel * (.0035 + tunnelProg * .004) + st.wormProg * st.worm * .0015) * (S.hyper ? 1.6 : 1);
+    const shake = reduced ? 0 : gwHit * .004 + (st.tunnel * (.0035 + tunnelProg * .004) + st.wormProg * st.worm * .0015) * (S.hyper ? 1.6 : 1);
     if (shake > 0) { shakeV.set((Math.random() - .5) * shake, (Math.random() - .5) * shake); camera.rotateZ((Math.random() - .5) * shake * 2); }
     else shakeV.set(0, 0);
 
@@ -807,6 +839,9 @@ async function boot() {
     planets.group.visible = (S.camT > .95 && S.camT < 3.35) || focus.idx >= 0;
     if (station.group.visible) station.update(S.sim, dt * Math.abs(timeScale));
     if (planets.group.visible) planets.update(S.sim, dt * Math.abs(timeScale), hovered.kind === 'planet' ? hovered.key : -1);
+    const beltReveal = Math.max(smooth(1.8, 1.99, S.camT), focus.idx >= 0 ? 1 : 0);
+    belt.group.visible = beltReveal > .001 && (S.camT < 2.96 || focus.idx >= 0);
+    if (belt.group.visible) belt.update(S.sim, camera, innerHeight * pipe.q.dpr * .012, beltReveal);
 
     // наведение
     if (!touch && S.launched) {
@@ -826,6 +861,7 @@ async function boot() {
     bhu.uDiskBright.value = (S.launched ? smooth(.2, 2.8, ti) : .0) * (1 + st.tess * 0);
     bhu.uStarBright.value = S.launched ? .25 + .75 * smooth(0, 1.6, ti) : .25;
     bhu.uFade.value = smooth(4.84, 5.0, S.camT);
+    bhu.uDiskBright.value *= 1 + gwHit * .9;
     cosmos.worm.uniforms.uTime.value = S.sim;
     const tu = cosmos.tunnel.uniforms;
     tu.uTime.value = S.sim; tu.uProg.value = tunnelProg; tu.uSpeed.value = reduced ? .12 : 1.4 + tunnelProg * 2.4;
@@ -842,7 +878,7 @@ async function boot() {
 
     // сцена
     pipe.beginScene();
-    if (station.group.visible || planets.group.visible) pipe.renderScene(world, camera);
+    if (station.group.visible || planets.group.visible || belt.group.visible) pipe.renderScene(world, camera);
 
     // частицы заголовка
     const holeP = project(new THREE.Vector3(0, 0, 0));
@@ -866,6 +902,10 @@ async function boot() {
     F.uShake.value.copy(shakeV);
     F.uSat.value = 1 - horizonFreeze * .35 + st.tess * .1;
     F.uScan.value = S.rewinding ? 1 : 0;
+    // кино-полосы в кульминации (кротовая нора) и при падении за горизонт
+    const lb = Math.max(win(S.camT, 3.28, 3.48, 3.9, 4.06), win(S.camT, 4.66, 4.82, 5.02, 5.12), focus.mix * .55);
+    if (Math.abs(lb - (S.lb ?? -1)) > .003) { S.lb = lb; html.style.setProperty('--lb', lb.toFixed(3)); }
+    F.uRipple.value.set(gw.x, gw.y, Math.max(0, gwAge - .5), gwAge > .5 && gwAge < 3.6 && !reduced ? 1 : 0);
     const exitFlash = win(S.camT, 3.88, 3.93, 3.96, 4.04);
     const tessFlash = win(S.camT, 4.97, 5.0, 5.03, 5.1);
     F.uFlash.value = reduced ? 0 : Math.max(exitFlash * .9, tessFlash * .75);

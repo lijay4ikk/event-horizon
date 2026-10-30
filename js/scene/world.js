@@ -8,18 +8,21 @@ const deg = d => d * Math.PI / 180;
 export const STATION = { pos: V(7, 1.6, 36), scale: 1 };
 
 export const PLANETS = [
-  { key: 'ocean',  type: 0, radius: 3.3, angle: deg(-24),  dist: 47, y: -0.5, tilt: .35, spin: .035, atmo: [0.30, 0.75, 1.0] },
-  { key: 'ice',    type: 1, radius: 2.6, angle: deg(-54),  dist: 50, y: 2.4,  tilt: -.2, spin: .02,  atmo: [0.70, 0.88, 1.0] },
-  { key: 'desert', type: 2, radius: 3.7, angle: deg(-86),  dist: 48, y: -1.6, tilt: .45, spin: .028, atmo: [1.0, 0.62, 0.34], ring: true },
-  { key: 'lava',   type: 3, radius: 2.9, angle: deg(-117), dist: 50, y: 1.0,  tilt: .1,  spin: .04,  atmo: [1.0, 0.36, 0.12] },
+  { key: 'ocean',  type: 0, radius: 3.3, angle: deg(-22),  dist: 48, y: -0.5, tilt: .35, spin: .035, atmo: [0.30, 0.75, 1.0],
+    moons: [{ r: .55, orbit: 6.2, speed: .22, phase: 1.2, incl: .25 }] },
+  { key: 'ice',    type: 1, radius: 2.6, angle: deg(-49),  dist: 51, y: 2.4,  tilt: -.2, spin: .02,  atmo: [0.70, 0.88, 1.0] },
+  { key: 'desert', type: 2, radius: 3.7, angle: deg(-76),  dist: 49, y: -1.6, tilt: .45, spin: .028, atmo: [1.0, 0.62, 0.34], ring: true },
+  { key: 'lava',   type: 3, radius: 2.9, angle: deg(-103), dist: 51, y: 1.0,  tilt: .1,  spin: .04,  atmo: [1.0, 0.36, 0.12] },
+  { key: 'giant',  type: 4, radius: 6.4, angle: deg(-131), dist: 60, y: 3.5,  tilt: .18, spin: .004, faceLon: .7, atmo: [1.0, 0.80, 0.58],
+    moons: [{ r: .75, orbit: 11.5, speed: .16, phase: .4, incl: .12 }, { r: .48, orbit: 15, speed: .1, phase: 2.6, incl: -.2 }] },
 ];
 PLANETS.forEach(p => { p.pos = polar(p.dist, p.angle, p.y); });
 
-export const WORMHOLE = { pos: polar(50, deg(-152), 3.0), radius: 5.0 };
+export const WORMHOLE = { pos: polar(52, deg(-163), 3.0), radius: 5.0 };
 
 // ── раскладка сцен по шкале T (0..6) ─────────────────────────────
 // 0 hero · 1 станция · 2 планеты · 3 кротовая нора · 4 горизонт · 5 тессеракт
-export const PLANET_T = PLANETS.map((_, i) => 2.08 + i * 0.23);
+export const PLANET_T = PLANETS.map((_, i) => 2.07 + i * 0.18);
 export const T = {
   wormEnterStart: 3.42, // сфера заполняет экран
   tunnelIn: 3.56, tunnelOut: 3.94,
@@ -47,6 +50,9 @@ function buildKeys() {
   add(1.80, around(-0.5, 20.5, 2.0), sTgt(0.18), 44, -.03);
   add(1.97, around(-1.05, 25, 3.2),  sTgt(0.30), 46, -.02);
 
+  // нырок сквозь пояс астероидов
+  add(2.0, polar(43.5, deg(-9), 0.9), polar(47, deg(-24), -0.5), 54, .06);
+
   // планеты: камера скользит вдоль каждой, ЧД остаётся на заднем плане
   PLANETS.forEach((p, i) => {
     const t0 = PLANET_T[i];
@@ -57,17 +63,22 @@ function buildKeys() {
       const toO = c.clone().negate().normalize();
       return c.clone().add(toP.multiplyScalar(1.15).add(toO).normalize().multiplyScalar(20));
     };
-    const c1 = camA(.205, 62, 2.4), c2 = camA(.15, 60, 1.2), c3 = camA(.095, 59, .3);
-    add(t0 - .045, c1, tgtFor(c1), 47, .02 * (i % 2 ? 1 : -1));
-    add(t0 + .06,  c2, tgtFor(c2), 46, 0);
-    add(t0 + .15,  c3, tgtFor(c3), 46, .02 * (i % 2 ? -1 : 1));
+    // дистанция и боковой сдвиг камеры растут с размером планеты
+    const k = p.radius / 3.1;
+    const gap = 12 * k, R0 = p.dist + gap;
+    const off = o => o * k * 62 / (R0 + 2);
+    const c1 = camA(off(.205), R0 + 2, 2.4 * k), c2 = camA(off(.15), R0, 1.2 * k), c3 = camA(off(.095), R0 - 1, .3 * k);
+    add(t0 - .04,  c1, tgtFor(c1), 47, .02 * (i % 2 ? 1 : -1));
+    add(t0 + .05,  c2, tgtFor(c2), 46, 0);
+    p.camMid = c2;
+    add(t0 + .125, c3, tgtFor(c3), 46, .02 * (i % 2 ? -1 : 1));
   });
 
   // кротовая нора
   const w = WORMHOLE.pos;
-  const dirIn = w.clone().sub(polar(66, deg(-128), 4)).normalize();
+  const dirIn = w.clone().sub(polar(70, deg(-145), 4)).normalize();
   const approach = (d) => w.clone().sub(dirIn.clone().multiplyScalar(d));
-  add(3.06, polar(66, deg(-128), 5.5), w.clone().add(V(0, 0, 0)), 50, .03);
+  add(3.06, polar(70, deg(-145), 5.5), w.clone().add(V(0, 0, 0)), 50, .03);
   add(3.22, approach(26).add(V(1.5, 1.2, 0)), w, 50, .06);
   add(3.40, approach(12), w, 54, .14);
   add(3.52, approach(5.6), w, 62, .26);

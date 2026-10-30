@@ -129,7 +129,7 @@ export async function buildReport(env, kind = 'yesterday', now = Date.now()) {
   if (ev('work').length) acts.push(`🖼 Работы: ${joinTop(ev('work').slice(0, 4), e => `${esc(e.value)} ${e.c}`)}`);
   const forms = sum('form');
   acts.push(forms ? `✉️ Отправили заявку: <b>${forms}</b>` : '✉️ Заявок не было');
-  const eggs = [['konami', 'гиперскорость'], ['stay', 'STAY'], ['rewind', 'перемотка']].map(([n, t]) => [t, sum(n)]).filter(x => x[1]);
+  const eggs = [['gwave', 'гравитационная волна'], ['konami', 'гиперскорость'], ['stay', 'STAY'], ['rewind', 'перемотка']].map(([n, t]) => [t, sum(n)]).filter(x => x[1]);
   if (eggs.length) acts.push(`🥚 Пасхалки: ${eggs.map(([t, c]) => `${t} ${c}`).join(' · ')}`);
   const sl = st.langs;
   if (sl.length > 1 || (sl[0] && sl[0].sl !== 'ru')) acts.push(`🌐 Язык сайта: ${joinTop(sl, r => `${String(r.sl).toUpperCase()} ${pct(r.c, T.s)}%`)}`);

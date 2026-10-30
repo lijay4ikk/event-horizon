@@ -2,7 +2,7 @@
 // IP не сохраняется: из него, браузера и даты получается одноразовый код посетителя на сутки.
 import { clean, cors, memLimiter, rateOk, sha256hex, localDay, localHour, parseUA, BOT_UA } from './util.js';
 
-const EVENTS = new Set(['planet', 'work', 'form', 'konami', 'stay', 'rewind', 'lang', 'sound', 'focus']);
+const EVENTS = new Set(['planet', 'work', 'form', 'konami', 'stay', 'rewind', 'lang', 'sound', 'focus', 'gwave']);
 const mem = memLimiter(120);
 const int = (v, lo, hi, def) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
 

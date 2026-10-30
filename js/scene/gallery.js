@@ -19,14 +19,30 @@ export class Gallery {
 
     WORKS.forEach((w, i) => {
       const el = document.createElement('div');
-      el.className = 'card3d';
+      el.className = 'card3d is3d';
       el.setAttribute('aria-hidden', 'true');
-      el.innerHTML = `<div class="c3-img"><img alt="" draggable="false" src="${makeArt(w.art, w.pal, i + 1, 640, 400)}"></div>
+      el.innerHTML = `<div class="c3-in"><div class="c3-img"><img alt="" draggable="false" src="${makeArt(w.art, w.pal, i + 1, 640, 400)}"></div>
         <div class="c3-row"><span class="c3-idx">${String(i + 1).padStart(2, '0')} / ${String(WORKS.length).padStart(2, '0')}</span><span class="c3-idx" style="color:var(--ash)">${w.year}</span></div>
-        <div class="c3-title"></div><div class="c3-tags"></div>`;
+        <div class="c3-title"></div><div class="c3-tags"></div><i class="c3-glare"></i></div>`;
       const obj = new CSS3DObject(el);
       obj.scale.setScalar(.0088);
       this.scene.add(obj);
+      // наклон к курсору и блик по стеклу
+      const inner = () => el.firstElementChild;
+      el.addEventListener('pointermove', e => {
+        if (e.pointerType !== 'mouse' || this.drag?.moved) return;
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        const s = inner().style;
+        s.setProperty('--ry', `${((x - .5) * 16).toFixed(2)}deg`);
+        s.setProperty('--rx', `${((.5 - y) * 12).toFixed(2)}deg`);
+        s.setProperty('--gx', `${(x * 100).toFixed(1)}%`); s.setProperty('--gy', `${(y * 100).toFixed(1)}%`);
+        el.classList.add('tilt');
+      });
+      el.addEventListener('pointerleave', () => {
+        el.classList.remove('tilt');
+        const s = inner().style; s.setProperty('--rx', '0deg'); s.setProperty('--ry', '0deg');
+      });
       el.addEventListener('click', (e) => {
         if (this.drag && this.drag.moved) return;
         this.onOpen(i, el.querySelector('img'));

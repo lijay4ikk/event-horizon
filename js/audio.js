@@ -149,7 +149,7 @@ export class AudioEngine {
   }
   buildPlanets() {
     const ctx = this.ctx;
-    this.planetVoices = [0, 1, 2, 3].map(i => {
+    this.planetVoices = [0, 1, 2, 3, 4].map(i => {
       const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
       const g = ctx.createGain(); g.gain.value = 0;
       if (pan) { g.connect(pan); pan.connect(this.bus); } else g.connect(this.bus);
@@ -167,6 +167,16 @@ export class AudioEngine {
         const n = this.src(this.noiseBuf), bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 3;
         this.lfo(.08, 500, bp.frequency);
         const ng = ctx.createGain(); ng.gain.value = .25; n.connect(bp); bp.connect(ng); ng.connect(g); n.start();
+      } else if (i === 4) { // газовый гигант: медленный «дышащий» гул бурь
+        [36.7, 55, 73.4].forEach((f, k) => {
+          const o = ctx.createOscillator(); o.type = k ? 'sine' : 'triangle'; o.frequency.value = f;
+          const og = ctx.createGain(); og.gain.value = [.12, .06, .04][k];
+          this.lfo(.05 + k * .03, [.08, .04, .03][k], og.gain);
+          o.connect(og); og.connect(g); o.start();
+        });
+        const n = this.src(this.brownBuf), bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 240; bp.Q.value = 1.5;
+        this.lfo(.04, 120, bp.frequency);
+        const ng = ctx.createGain(); ng.gain.value = .5; n.connect(bp); bp.connect(ng); ng.connect(g); n.start();
       } else { // вулкан: низкий рокот
         const n = this.src(this.brownBuf), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 160;
         const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 41; const og = ctx.createGain(); og.gain.value = .08;
@@ -222,6 +232,19 @@ export class AudioEngine {
     lp.frequency.setValueAtTime(5000, t); lp.frequency.exponentialRampToValueAtTime(80, t + 1.8);
     const ng = ctx.createGain(); ng.gain.setValueAtTime(.4, t); ng.gain.exponentialRampToValueAtTime(.0001, t + 2);
     n.connect(lp); lp.connect(ng); ng.connect(this.bus); ng.connect(this.verbIn); n.start(t); n.stop(t + 2.1);
+  }
+
+  // гравитационная волна: «чирп» с нарастающей частотой и низкий удар
+  gwave() {
+    if (!this.ready || !this.on) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(34, t); o.frequency.exponentialRampToValueAtTime(260, t + .55);
+    const g = ctx.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.32, t + .5); g.gain.exponentialRampToValueAtTime(.0001, t + .62);
+    o.connect(g); g.connect(this.bus); g.connect(this.verbIn); o.start(t); o.stop(t + .7);
+    const b = ctx.createOscillator(); b.frequency.setValueAtTime(70, t + .55); b.frequency.exponentialRampToValueAtTime(24, t + 2.6);
+    const bg = ctx.createGain(); bg.gain.setValueAtTime(.0001, t + .55); bg.gain.exponentialRampToValueAtTime(.85, t + .6); bg.gain.exponentialRampToValueAtTime(.0001, t + 3);
+    b.connect(bg); bg.connect(this.bus); bg.connect(this.verbIn); b.start(t + .55); b.stop(t + 3.1);
   }
 
   transmit() {

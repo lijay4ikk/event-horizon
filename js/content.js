@@ -47,4 +47,9 @@ export const PLANET_INFO = [
       list: [['Срок', 'по задаче'], ['Формат', 'звук · AR · инсталляции'], ['Инструменты', 'Web Audio · TouchDesigner'], ['Поверхность', '1 200 °C']] },
     en: { t: 'Sound & creative tech', d: 'Interface sound design, generative music, AR effects and media installations for exhibitions and showrooms.',
       list: [['Timeline', 'per brief'], ['Format', 'sound · AR · installations'], ['Tools', 'Web Audio · TouchDesigner'], ['Surface', '1,200 °C']] } },
+  { id: 'JOVIA-f', arts: ['bands', 'orbits', 'galaxy'], pal: ['#0c0805', '#FFB347', '#FFF4E0'],
+    ru: { t: 'Бренд-миры и айдентика', d: 'Строим айдентику как систему: логотип, типографика, цвет, движение и звук работают вместе и одинаково уверенно звучат на сайте, в соцсетях и на сцене.',
+      list: [['Срок', '4–10 недель'], ['Результат', 'айдентика · гайдлайн · 3D-ассеты'], ['Форматы', 'статика · моушн · звук'], ['Шторм', '350 лет']] },
+    en: { t: 'Brand worlds & identity', d: 'Identity built as a system: logo, type, colour, motion and sound work together and feel equally confident on a website, in social and on stage.',
+      list: [['Timeline', '4–10 weeks'], ['Output', 'identity · guidelines · 3D assets'], ['Formats', 'static · motion · sound'], ['Storm', '350 years']] } },
 ];
